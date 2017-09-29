@@ -16,14 +16,14 @@ Humanoid behavior imitation using Generative Adversarial Imitation Learning (GAI
     ```
 3. Execute
 
-On macOS in terminal depending on whether you have a GPU version or not:
-```
-sh run.sh
-```
-or
-```
-sh run_gpu.sh
-```
+    On macOS in terminal depending on whether you have a GPU version or not:
+    ```
+    sh run.sh
+    ```
+    or
+    ```
+    sh run_gpu.sh
+    ```
 
 # Style
 Please ensure that all your Python code conforms to the [PEP8](https://www.python.org/dev/peps/pep-0008/) standard. If your question is not answered by PEP8, please revert to the [Google Python Style Guide](https://google.github.io/styleguide/pyguide.html). Similarly, shell scripts should use the [Google Shell Style Guide](https://google.github.io/styleguide/shell.xml).
