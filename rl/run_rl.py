@@ -22,11 +22,23 @@ import mocap_env
 
 env = None
 ENV_ID = 'MujocoMocapHumanoid-v1'
+iteration = 0
+
+
+def save():
+    saver = tf.train.Saver()
+    sess = tf.get_default_session()
+    saver.save(sess, "./humanoid_policy.ckpt")
+    print("Saved policy.")
 
 
 def learning_iteration(locals, globals):
+    global iteration
     global env
     env.render()
+    iteration += 1
+    if iteration % 20 == 0:
+        save()
 
 
 def train(env_id, num_timesteps, seed):
@@ -72,7 +84,7 @@ def main():
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--env', help='environment ID', default=ENV_ID)
     parser.add_argument('--seed', help='RNG seed', type=int, default=0)
-    parser.add_argument('--num-timesteps', type=int, default=int(1e5))
+    parser.add_argument('--num-timesteps', type=int, default=int(1e7))
     parser.add_argument('--load', type=str, default="")
     args = parser.parse_args()
     ENV_ID = args.env
@@ -84,9 +96,7 @@ def main():
     logger.configure('./log', ['tensorboard'])
     train(args.env, num_timesteps=args.num_timesteps, seed=args.seed)
 
-    saver = tf.train.Saver()
-    sess = tf.get_default_session()
-    save_path = saver.save(sess, "./humanoid_policy.ckpt")
+    save()
 
 
 if __name__ == '__main__':

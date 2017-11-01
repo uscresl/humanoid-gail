@@ -1,0 +1,2 @@
+model_checkpoint_path: "humanoid_policy.ckpt"
+all_model_checkpoint_paths: "humanoid_policy.ckpt"
