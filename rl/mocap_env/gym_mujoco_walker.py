@@ -39,7 +39,7 @@ class MujocoMocapHumanoid(mujoco_env.MujocoEnv, utils.EzPickle):
         quad_ctrl_cost = 0.1 * np.square(data.ctrl).sum()
         quad_impact_cost = .5e-6 * np.square(data.cfrc_ext).sum()
         quad_impact_cost = min(quad_impact_cost, 10)
-        reward = lin_vel_cost - quad_ctrl_cost - quad_impact_cost + alive_bonus + qpos[1]
+        reward = lin_vel_cost - quad_ctrl_cost - quad_impact_cost + alive_bonus
         logger.logkv('reward', reward)
         logger.logkv('height', qpos[1])
         logger.logkv('lin_vel_cost', lin_vel_cost)
