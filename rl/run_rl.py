@@ -21,6 +21,8 @@ import mocap_env
 env = None
 ENV_ID = 'MujocoMocapHumanoid-v1'
 iteration = 0
+hidden_size = 64
+num_hidden_layers = 2
 
 
 def save():
@@ -110,7 +112,7 @@ def train(env_id, num_timesteps, seed):
     set_global_seeds(workerseed)
     def policy_fn(name, ob_space, ac_space):
         return MlpPolicy(name=name, ob_space=env.observation_space, ac_space=env.action_space,
-            hid_size=64, num_hid_layers=2)
+                  hid_size=hidden_size, num_hid_layers=num_hidden_layers)
     # env = bench.Monitor(env, logger.get_dir() and
         # osp.join(logger.get_dir(), str(rank)))
     env.seed(workerseed)
@@ -123,7 +125,7 @@ def train(env_id, num_timesteps, seed):
 
 def load(check_point):
     policy = MlpPolicy(name="pi", ob_space=env.observation_space, ac_space=env.action_space,
-            hid_size=64, num_hid_layers=2)
+            hid_size=hidden_size, num_hid_layers=num_hidden_layers)
     saver = tf.train.Saver()
     sess = U.single_threaded_session()
     sess.__enter__()
@@ -137,14 +139,20 @@ def load(check_point):
 def main():
     global ENV_ID
     global env
+    global hidden_size
+    global num_hidden_layers
     import argparse
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--env', help='environment ID', default=ENV_ID)
     parser.add_argument('--seed', help='RNG seed', type=int, default=0)
     parser.add_argument('--num-timesteps', type=int, default=int(1e7))
+    parser.add_argument('--hidden-size', type=int, default=int(64))
+    parser.add_argument('--hidden-layers', type=int, default=int(2))
     parser.add_argument('--load', type=str, default="")
     args = parser.parse_args()
     ENV_ID = args.env
+    hidden_size = args.hidden_size
+    num_hidden_layers = args.hidden_layers
     env = gym.make(ENV_ID)
     if len(args.load) > 0:
         load(args.load)
