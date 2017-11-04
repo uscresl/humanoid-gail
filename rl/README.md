@@ -19,3 +19,9 @@ To load a pretrained policy, issue
 ```bash
 python3 run_rl.py --load humanoid_policy.ckpt
 ```
+
+## Example
+Humanoid running in MuJoCo:
+```bash
+python3 run_rl.py --env Humanoid-v1 --hidden-size 32 --load examples/trpo.Humanoid.0.00-10100
+```
