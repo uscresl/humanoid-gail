@@ -1,8 +1,9 @@
-import numpy as np
+import os
+
+from baselines import logger
 from gym.envs.mujoco import mujoco_env
 from gym import utils
-import os
-from baselines import logger
+import numpy as np
 
 
 def mass_center(model):
@@ -11,21 +12,21 @@ def mass_center(model):
     return (np.sum(mass * xpos, 0) / np.sum(mass))[0]
 
 
-
 class MujocoMocapHumanoid(mujoco_env.MujocoEnv, utils.EzPickle):
     def __init__(self):
         print(os.path.join(os.path.dirname(__file__), 'humanoid_mocap.xml'))
-        mujoco_env.MujocoEnv.__init__(self, os.path.join(os.path.dirname(__file__), 'humanoid_mocap.xml'), 5)
+        mujoco_env.MujocoEnv.__init__(self,
+                                      os.path.join(
+                                          os.path.dirname(__file__),
+                                          'humanoid_mocap.xml'), 5)
         utils.EzPickle.__init__(self)
 
     def _get_obs(self):
         data = self.model.data
-        return np.concatenate([data.qpos.flat[2:],
-                               data.qvel.flat,
-                               data.cinert.flat,
-                               data.cvel.flat,
-                               data.qfrc_actuator.flat,
-                               data.cfrc_ext.flat])
+        return np.concatenate([
+            data.qpos.flat[2:], data.qvel.flat, data.cinert.flat,
+            data.cvel.flat, data.qfrc_actuator.flat, data.cfrc_ext.flat
+        ])
 
     def _step(self, a):
         global plotting_initialized
@@ -35,7 +36,8 @@ class MujocoMocapHumanoid(mujoco_env.MujocoEnv, utils.EzPickle):
         alive_bonus = 5.0
         qpos = self.model.data.qpos
         data = self.model.data
-        lin_vel_cost = 0.25 * (pos_after - pos_before) / self.model.opt.timestep
+        lin_vel_cost = 0.25 * (
+            pos_after - pos_before) / self.model.opt.timestep
         quad_ctrl_cost = 0.1 * np.square(data.ctrl).sum()
         quad_impact_cost = .5e-6 * np.square(data.cfrc_ext).sum()
         quad_impact_cost = min(quad_impact_cost, 10)
@@ -44,14 +46,21 @@ class MujocoMocapHumanoid(mujoco_env.MujocoEnv, utils.EzPickle):
         logger.logkv('height', qpos[1])
         logger.logkv('lin_vel_cost', lin_vel_cost)
         done = bool((qpos[1] < .3) or (qpos[1] > 2.0))
-        return self._get_obs(), reward, done, dict(reward_linvel=lin_vel_cost, reward_quadctrl=-quad_ctrl_cost, reward_alive=alive_bonus, reward_impact=-quad_impact_cost)
+        return self._get_obs(), reward, done, dict(
+            reward_linvel=lin_vel_cost,
+            reward_quadctrl=-quad_ctrl_cost,
+            reward_alive=alive_bonus,
+            reward_impact=-quad_impact_cost)
 
     def reset_model(self):
         c = 0.01
-        self.set_state(
-            self.init_qpos + self.np_random.uniform(low=-c, high=c, size=self.model.nq),
-            self.init_qvel + self.np_random.uniform(low=-c, high=c, size=self.model.nv,)
-        )
+        self.set_state(self.init_qpos + self.np_random.uniform(
+            low=-c, high=c, size=self.model.nq),
+                       self.init_qvel + self.np_random.uniform(
+                           low=-c,
+                           high=c,
+                           size=self.model.nv,
+                       ))
         return self._get_obs()
 
     def viewer_setup(self):
