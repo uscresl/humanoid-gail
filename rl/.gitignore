@@ -1,0 +1,7 @@
+log/
+checkpoint
+*.cpkt
+*.index
+*.meta
+*.data*
+.idea/
