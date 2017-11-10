@@ -17,8 +17,8 @@ from baselines.common.mpi_fork import mpi_fork
 from baselines.ppo1.mlp_policy import MlpPolicy
 from baselines.trpo_mpi import trpo_mpi
 
-import mocap_env.gym_mocap_walker
-import mocap_env.gym_mujoco_walker
+import mocap_env.gym_roboschool_mocap_walker
+import mocap_env.gym_mujoco_mocap_walker
 import mocap_env
 
 DEFAULT_ENV_ID = 'MujocoMocapHumanoid-v1'

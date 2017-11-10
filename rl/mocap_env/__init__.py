@@ -1,6 +1,6 @@
 from gym.envs.registration import register
-from .gym_mocap_walker import RoboschoolMocapHumanoid
-from .gym_mujoco_walker import MujocoMocapHumanoid
+from .gym_roboschool_mocap_walker import RoboschoolMocapHumanoid
+from .gym_mujoco_mocap_walker import MujocoMocapHumanoid
 
 register(
     id='RoboschoolMocapHumanoid-v1',
