@@ -21,6 +21,9 @@ import mocap_env.gym_roboschool_mocap_walker
 import mocap_env.gym_mujoco_mocap_walker
 import mocap_env
 
+import featurized_env
+import featurized_env.humanoid
+
 DEFAULT_ENV_ID = 'MujocoMocapHumanoid-v1'
 
 
