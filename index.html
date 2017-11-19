@@ -40,6 +40,16 @@
     The original GAIL algorithm of Ho et al. <dt-cite key="GAIL"></dt-cite> requires that both states $s$ and corresponding actions $a$ are present in the expert policy. In a real life imitation learning problem, however, such as humanoid motion, the actions (joint torques) are hard to obtain compared to states (joint positions).
   </p>
   <hr>
+  <h2>Environment $f(a)$</h2>
+    <p>
+      OpenAI Roboschool/MuJoCo
+    </p>
+  <hr>
+  <h2>Generated Policy $\pi_G$</h2>
+    <p>
+      The policy network consists of a 3 layer network with neuron widths of (300, 200, 100). The size of this network scales proportionally with the degrees of freedom present in the target skeleton.
+    </p>
+  <hr>
   <h2>Expert Policy $\pi_E$</h2>
     <p>
       A fundamental component in the system is the skill which needs to be learned. This skill can be any movement of the human body. Such a skill can be seen as a rollout (series of states $\{s_1, s_2, \ldots,s_n\}$ at discrete timesteps $\{\}$) of the implicit expert policy $\pi_E$ which has a state $s$ to action $a$ mapping. With an increasing level of complexity the system accepts expert input from three sources:  
@@ -54,11 +64,11 @@
     </p>
     <h3>Reinforcement Learned Policy</h3>
       <p>
-        A <i>'vanilla'</i> way of using the GAIL model is to imitate a policy that is obtained through <i>Reinforcement Learning (RL)</i>. This method is employed in the original GAIL paper of Ho et al. <dt-cite key="GAIL"></dt-cite>. Note that a RL policy, next to states, also contains actions, which are mostly not observable in a real world setting. The results of our RL policy and its learned GAIL policy can be found in Video XXX.
+        A <i>'vanilla'</i> way of using the GAIL model is to imitate a policy that is obtained through <i>Reinforcement Learning (RL)</i>. An agent learns what is best to do (take actions $a$) in an environment based on a given reward function. This method is employed in the original GAIL paper of Ho et al. <dt-cite key="GAIL"></dt-cite>. Note that a RL policy, next to states, also contains actions, which are mostly not observable in a real world setting. The results of our Trust Region Policy Optimization (TRPO) RL policy and its learned GAIL policy can be found in Video XXX.
       </p>
     <h3>Learning from Motion Capture Data</h3>
       <p>
-      A setting which is much closer to a humanoid reality is to imitate Motion Capture data. This data is obtained through putting markers on actors who then perform a series of skills. The CMU Graphics Lab's Motion Capture Database (MOCAP) provides several skills such as walking and jumping <dt-cite key="MOCAP"></dt-cite>. As this data only provides states, the GAIL is adapted to function without expert actions available as in Merel et al. <dt-cite key="DeepMindGAIL"></dt-cite>.
+      A setting much closer to a humanoid reality is to imitate Motion Capture data. Here the input rollout source does not provide any actions nor rewards. This data is obtained through putting markers on actors who then perform a series of skills. The CMU Graphics Lab's Motion Capture Database (MOCAP) provides several skills such as walking and jumping <dt-cite key="MOCAP"></dt-cite>. As this data only provides states, the GAIL is adapted to function without expert actions available as in Merel et al. <dt-cite key="DeepMindGAIL"></dt-cite>.
       </p>
 
   <p>
@@ -67,7 +77,11 @@
   <h3>Learning from Video</h3>
 
   <p>A first step towards In this classical setting an agent in an environment is trains a policy of operation using a reinforcement learning algorithm. In our case we opted for Trusted Region Policy Optimization (TRPO) which has a parallellized implementation in Baselines. We trained our modified MOCAP skeleton using TRPO for 10.000 iterations. The result after XXX (1900) iterations is shown below:</p>
-  <h2>GAIL as an RL problem</h2>
+  <hr>
+  <h2>GAIL as Inverse Reinforcement Learning</h2>
+  <p>
+    Although GAIL does not use an explicit reward function to evaluate the generated policy, the discriminator does give a reward signal in some sense. As discussed in Finn et al <dt-cite key="FinnGANIRL"></dt-cite>, a Generative Adversarial Network and by extension the GAIL method can be viewed as an Inverse Reinforcement Learning problem.
+  </p>
 </dt-article>
 
 <dt-appendix>
@@ -114,5 +128,22 @@
   title = {Motion Capture Database},
   url = {http://mocap.cs.cmu.edu/},
   urldate = {2017-11-18}
+}
+@article{FinnGANIRL,
+  author    = {Chelsea Finn and
+               Paul Christiano and
+               Pieter Abbeel and
+               Sergey Levine},
+  title     = {A Connection between Generative Adversarial Networks, Inverse Reinforcement
+               Learning, and Energy-Based Models},
+  journal   = {CoRR},
+  volume    = {abs/1611.03852},
+  year      = {2016},
+  url       = {http://arxiv.org/abs/1611.03852},
+  archivePrefix = {arXiv},
+  eprint    = {1611.03852},
+  timestamp = {Wed, 07 Jun 2017 14:40:23 +0200},
+  biburl    = {http://dblp.org/rec/bib/journals/corr/FinnCAL16},
+  bibsource = {dblp computer science bibliography, http://dblp.org}
 }
 </script>
