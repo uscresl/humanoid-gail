@@ -1,0 +1,19 @@
+(256, 256, 3)
+CocoPart.Nose :  
+CocoPart.Neck :  
+CocoPart.RShoulder :  
+CocoPart.RElbow :  
+CocoPart.RWrist :  
+CocoPart.LShoulder :  
+CocoPart.LElbow :  
+CocoPart.LWrist :  
+CocoPart.RHip :  
+CocoPart.RKnee :  
+CocoPart.RAnkle :  
+CocoPart.LHip :  
+CocoPart.LKnee :  
+CocoPart.LAnkle :  
+CocoPart.REye :  120.0 , 32.0
+CocoPart.LEye :  128.0 , 32.0
+CocoPart.REar :  112.0 , 32.0
+CocoPart.LEar :  136.0 , 32.0
