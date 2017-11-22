@@ -80,6 +80,12 @@
       <p>
         A <i>'vanilla'</i> way of using the GAIL model is to imitate a policy that is obtained through <i>Reinforcement Learning (RL)</i>. An agent learns what is best to do (take actions $a$) in an environment based on a given reward function. This method is employed in the original GAIL paper of Ho et al. <dt-cite key="GAIL"></dt-cite>. Note that a RL policy, next to states, also contains actions, which are mostly not observable in a real world setting. The results of our Trust Region Policy Optimization (TRPO) RL policy and its learned GAIL policy can be found in Video XXX.
       </p>
+      <p>
+      <video width="650" style="width:650px;" controls autoplay loop>
+        <source src="videos/GAIL_TRPO_2.mp4" type="video/mp4">
+        Your browser does not support the video tag.
+      </video>
+    </p>
     <h3>Learning from Motion Capture Data</h3>
       <p>
       A setting much closer to a humanoid reality is to imitate Motion Capture data. Here the input rollout source does not provide any actions nor rewards. This data is obtained through putting markers on actors who then perform a series of skills. The CMU Graphics Lab's Motion Capture Database (MOCAP) provides several skills such as walking and jumping <dt-cite key="MOCAP"></dt-cite>. As this data only provides states, the GAIL is adapted to function without expert actions available as in Merel et al. <dt-cite key="DeepMindGAIL"></dt-cite>.
