@@ -21,9 +21,23 @@ def compute_features(positions):
     return features.flatten()
 
 
+def load_positions(asf_file=os.path.join(os.path.dirname(__file__), "examples/12.asf"),
+                  amc_file=os.path.join(os.path.dirname(__file__), "examples/02_01.amc")):
+    """Computes the end-effector positions over all animation frames of the AMC file."""
+    parser = AsfParser()
+    parser.parse(asf_file)
+    amc = AmcParser()
+    amc.parse(amc_file)
+    skeleton = parser.skeleton
+    positions = []
+    for frame in amc.frames:
+        positions.append(skeleton.compute_motion(frame))
+    return positions
+
+
 def load_features(asf_file=os.path.join(os.path.dirname(__file__), "examples/12.asf"),
                   amc_file=os.path.join(os.path.dirname(__file__), "examples/02_01.amc")):
-    """Computes the 5 3D vectors over all animation frames of the AMC file."""
+    """Computes the 5 3D vectors over all animation frames of the AMC file. Returns a Tx15 matrix."""
     parser = AsfParser()
     parser.parse(asf_file)
     amc = AmcParser()

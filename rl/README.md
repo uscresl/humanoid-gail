@@ -17,11 +17,11 @@ The resulting policy network is saved as TensorFlow checkpoint in the same path 
 
 To load a pretrained policy, issue
 ```bash
-python3 run_rl.py --load humanoid_policy.ckpt
+CUDA_VISIBLE_DEVICES="" python3 run_rl.py --load humanoid_policy.ckpt
 ```
 
 ## Example
 Humanoid running in MuJoCo:
 ```bash
-python3 run_rl.py --env Humanoid-v1 --hidden-size 32 --load examples/trpo.Humanoid.0.00-10100
+CUDA_VISIBLE_DEVICES="" python3 run_rl.py --env Humanoid-v1 --hidden-size 32 --load examples/trpo.Humanoid.0.00-10100
 ```
