@@ -46,11 +46,19 @@ video {
     The original GAIL algorithm of Ho et al. <dt-cite key="GAIL"></dt-cite> requires that both states $s$ and corresponding actions $a$ are present in the expert policy. In a real life imitation learning problem, however, such as humanoid motion, the actions (joint torques) are hard to obtain compared to states (joint positions).
   </p>
   <p>
+  In a normal GAN there are two loss functions that can be optimized by regular gradient descent algorithms; one for the discriminator and one for the generator. In GAIL, however, as the generator network $G_\theta$ generates the parameters for a policy network $\pi_g$, a policy gradient method (e.g. TRPO) needs to be applied, in conjuction with a regular gradient descent method to update $\theta$. Based on the rollouts $\{z^g_t\}_{t=1\dots T^g}$ of $\pi_g$, and the rewards $\{r_t\}_{t=1\dots T^g}$ associated with each $z^g_t$ that is calculated by the discriminator, the policy gradient method is able to update $\theta$. Note that the paramters of the policy $\pi_g$ are never directly updated, but change as a result of the changing generator $G_\theta$. Contrary to regular GAN practice, the rewards calculated by the discriminator are found to yield better results when $r_t = -\log(1 - D_\phi(\cdot))$ was used compared to $\log(D_\phi(\cdot))$.
+
+
+  The loss function to be optimized for the discriminator $D_\phi$ is much like in a regular GAN:
+  $$\mathscr{L}(\phi) = \Sigma_{t=1\dots T^g} \log(1 - D_\phi(z^g_t)) - \Sigma_{t=1\dots T^d} \log(D_\phi(z^d_t))$$
+  </p>
+  <p>
+    Algorithm 1 gives an overview of the GAIL policy training.
     <div style="white-space: pre; font-family: Georgia, serif; border-left:5px solid #ccc; padding: -6px -6px">   <b>Algorithm 1</b>
     <b>Input:</b> set of demonstrations $\{z^d_t\}_{t=1\dots T^d}$
     Initialize $\pi_g$ and $D_\phi$ randomly
     <b>for</b> $i$ in $1 \dots N$ <b>do</b>
-        Sample rollouts from $\pi_g$, $\{z^g_t\}_{t=1\dots T^g}$
+        Sample rollouts $\{z^g_t\}_{t=1\dots T^g}$ from $\pi_g$ in the environment $E$
         Calculate rewards $\{r_t = - \log(1 - D_\phi(z^g_t))\}_{t=1\dots T^g}$
         Update $\theta$ with <i>TRPO</i>
         <b>for</b> $j$ in $1\dots M$ <b>do</b>
@@ -59,7 +67,7 @@ video {
     <b>Return:</b> $\pi_g$</div>
   </p>
   <hr>
-  <h2>Environment</h2>
+  <h2>Environment $E$</h2>
     <p>
       Both <a href="http://mujoco.org/">MuJoCo</a> and <a href="https://github.com/openai/roboschool">OpenAI Roboschool</a> are used as physics engines for simulation environments, in which actions $a$ can be taken and the state $s$ can be sampled at any moment:
       <ul>
@@ -128,6 +136,12 @@ video {
     We were able to imitate humanoid motion directly from video, which extends on humanoid imitation on pure motion capture data. This encompasses a large reduction in terms of effort which needs to be done for dataset collection for imitation learning.
 
     Possible further work: multi-task learning.
+  </p>
+  <hr>
+  <h2>Acknowledgements</h2>
+  <p>
+    The data used in this project was obtained from <a href="http://mocap.cs.cmu.edu">mocap.cs.cmu.edu</a>.
+    The database was created with funding from NSF EIA-0196217.
   </p>
 </dt-article>
 
