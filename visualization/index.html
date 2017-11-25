@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>MoCap Visualizer</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+	<style>
+		body {
+			color: #000;
+			font-family:monospace;
+			font-size:13px;
+			text-align:center;
+
+			background-color: #fff;
+			margin: 0px;
+			overflow: hidden;
+		}
+
+		#info {
+			position: absolute;
+			top: 0px; width: 100%;
+			padding: 5px;
+		}
+
+		#features {
+			position: absolute;
+			bottom: 0px; width: 100%;
+			padding: 5px;
+			height: 150px;
+		}
+
+		#features p {
+			margin-bottom: 0;
+		}
+
+		#feature1 { color: #ff9900; text-shadow: 0 1px 0 #000; }
+		#feature2 { color: #99ff00; text-shadow: 0 1px 0 #000; }
+		#feature3 { color: #ff0099; text-shadow: 0 1px 0 #000; }
+		#feature4 { color: #9900ff; text-shadow: 0 1px 0 #000; }
+		#feature5 { color: #000000; }
+
+		a {
+			color: #0af;
+		}
+	</style>
+</head>
+<body>
+	<div id="container"></div>
+
+	<div id="info">camera orbit/zoom/pan with left/middle/right mouse button</div>
+
+	<div id="features">
+		<p id="feature1"></p>
+		<p id="feature2"></p>
+		<p id="feature3"></p>
+		<p id="feature4"></p>
+		<p id="feature5"></p>
+	</div>
+
+	<script src="js/three.min.js"></script>
+	<script src="js/OrbitControls.js"></script>
+	<script src="js/THREE.MeshLine.js"></script>
+
+	<script src="js/Detector.js"></script>
+	<script src="js/stats.min.js"></script>
+
+	<script src="js/utils.js"></script>
+
+	<script src="js/jquery-3.2.1.min.js"></script>
+	<script src="js/math.min.js"></script>
+
+	<script>
+		var scene, camera, controls, stats;
+		var renderer, mixer;
+
+		var clock = new THREE.Clock();
+		var url = 'js/scene-animation.json';
+
+		var SCREEN_WIDTH = window.innerWidth;
+		var SCREEN_HEIGHT = window.innerHeight;
+
+		var container = document.getElementById('container');
+
+		stats = new Stats();
+		container.appendChild(stats.dom);
+
+		renderer = new THREE.WebGLRenderer( { antialias: true } );
+		renderer.setPixelRatio( window.devicePixelRatio );
+		renderer.setSize( SCREEN_WIDTH, SCREEN_HEIGHT );
+		renderer.shadowMap.enabled = true;
+		renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+		container.appendChild( renderer.domElement );
+
+		var feature1 = [];
+		var feature2 = [];
+		var feature3 = [];
+		var feature4 = [];
+		var feature5 = [];
+
+		$.getJSON("mocap/subject.json", function(subject)
+		{
+			scene = new THREE.Scene();
+		    scene.background = new THREE.Color(0xffffff);
+
+		    camera = new THREE.PerspectiveCamera(30, SCREEN_WIDTH / SCREEN_HEIGHT, 1, 10000);
+			camera.position.set(-200, 50, 200);
+
+			controls = new THREE.OrbitControls( camera );
+
+			var lights = [];
+			lights[ 0 ] = new THREE.PointLight( 0xffffff, 1, 0 );
+			lights[ 1 ] = new THREE.PointLight( 0xffffff, 0.1, 0 );
+			lights[ 2 ] = new THREE.PointLight( 0xffffff, 0.1, 0 );
+
+			lights[ 0 ].position.set( 0, 200, 0 );
+			lights[ 1 ].position.set( 100, 200, 100 );
+			lights[ 2 ].position.set( - 100, - 200, - 100 );
+
+			lights[ 0 ].castShadow = true;
+			lights[ 1 ].castShadow = true;
+			lights[ 2 ].castShadow = true;
+
+			lights[ 0 ].shadow.mapSize.width = 1024;  
+			lights[ 0 ].shadow.mapSize.height = 1024; 
+			lights[ 0 ].shadow.camera.near = 2;       
+			lights[ 0 ].shadow.camera.far = 500;
+
+			lights[ 1 ].shadow.mapSize.width = 1024;  
+			lights[ 1 ].shadow.mapSize.height = 1024; 
+			lights[ 1 ].shadow.camera.near = 2;       
+			lights[ 1 ].shadow.camera.far = 500;
+
+			lights[ 2 ].shadow.mapSize.width = 1024;  
+			lights[ 2 ].shadow.mapSize.height = 1024; 
+			lights[ 2 ].shadow.camera.near = 2;       
+			lights[ 2 ].shadow.camera.far = 500;
+
+			scene.add( lights[ 0 ] );
+			scene.add( lights[ 1 ] );
+			scene.add( lights[ 2 ] );
+
+			// add background
+			var geometry = new THREE.PlaneBufferGeometry(20000, 20000);
+			var material = new THREE.MeshPhongMaterial({ shininess: 0.1 });
+			var ground = new THREE.Mesh(geometry, material);
+			ground.position.set(0, -50, 0);
+			ground.rotation.x = -Math.PI / 2;
+			scene.add(ground);
+
+			// smaller plane that only renders shadows
+			var shadowGeometry = new THREE.PlaneBufferGeometry(200, 200);
+			var shadowGround = new THREE.Mesh(shadowGeometry, new THREE.ShadowMaterial({opacity: 0.5}));
+			shadowGround.position.set(0, 1, 0);
+			shadowGround.rotation.x = -Math.PI / 2;
+            shadowGround.castShadow = false;
+            shadowGround.receiveShadow = true;
+			scene.add(shadowGround);
+
+			scene.fog = new THREE.Fog(0xffffff, 1000, 10000);
+
+			material = new THREE.MeshNormalMaterial();
+
+			var lr = loadSubject(scene, subject);
+			subject = lr.subject;
+			bones = lr.bones;
+
+			var feature1arrow = new THREE.ArrowHelper(new THREE.Vector3(0, 1, 0), new THREE.Vector3(0,0,0), 14, 0xff9900, 2, 2);
+			feature1arrow.name = "feature1arrow";
+			scene.add(feature1arrow);
+			var feature2arrow = new THREE.ArrowHelper(new THREE.Vector3(0, 1, 0), new THREE.Vector3(0,0,0), 14, 0x99ff00, 2, 2);
+			feature2arrow.name = "feature2arrow";
+			scene.add(feature2arrow);
+			var feature3arrow = new THREE.ArrowHelper(new THREE.Vector3(0, 1, 0), new THREE.Vector3(0,0,0), 14, 0xff0099, 2, 2);
+			feature3arrow.name = "feature3arrow";
+			scene.add(feature3arrow);
+			var feature4arrow = new THREE.ArrowHelper(new THREE.Vector3(0, 1, 0), new THREE.Vector3(0,0,0), 14, 0x9900ff, 2, 2);
+			feature4arrow.name = "feature4arrow";
+			scene.add(feature4arrow);
+			var feature5arrow = new THREE.ArrowHelper(new THREE.Vector3(0, 1, 0), new THREE.Vector3(0,0,0), 16, 0x000000, 2, 2);
+			feature5arrow.name = "feature5arrow";
+			scene.add(feature5arrow);
+
+			var light = new THREE.AmbientLight(0x404040); // soft white light
+			scene.add(light);
+
+			// generate keyframes to play back AMC animation
+			mixer = new THREE.AnimationMixer(scene);
+
+			loadAnimation().then(function(frames)
+			{
+				var positions = {};
+				var frame = frames[0];
+				for (var boneName in frame)
+					positions[boneName] = [];
+				var times = [];
+				console.log(frames);
+				for (var i = 0; i < frames.length; ++i)
+				{
+					times.push(i/100.);
+					var frame = frames[i];
+					for (var boneName in frame)
+					{
+						positions[boneName].push(frame[boneName][0] / 40.);
+						positions[boneName].push(frame[boneName][1] / 40.);
+						positions[boneName].push(frame[boneName][2] / 40.);
+					}
+
+					// compute local bone transformation
+					// given parent position, current joint, and stack of rotation matrices
+					// function dfs(position, node, stack)
+				 //    {
+					//     var angles = [0, 0, 0];
+					//     var direction = [0, 0, 0];
+				 //   		if ("direction" in node)
+				 //        {
+				 //            direction = math.multiply(node.direction, node.length);
+
+				 //            if ("axis" in node && node.name in frame)
+				 //            {
+					//             var dofs = ["rx", "ry", "rz"];
+					//             for (var d = 0; d < node.dof.length; ++d)
+					//             {
+					//             	var dof = node.dof[d];
+					//             	angles[dofs.indexOf(dof)] = frame[node.name][d];
+					//             }
+					//         }
+					//     }
+
+			  //           var L = rotation_matrix(node, angles[0], angles[1], angles[2]);
+			  //           stack.push(math.multiply(L, stack[stack.length-1]));
+
+			  //           var d = math.multiply(direction, stack[stack.length-1]).toArray();
+			  //           direction = new THREE.Vector3(d[0], d[1], d[2]);
+
+			  //           var endPosition = new THREE.Vector3().addVectors(position, direction);
+
+			  //   		positions[node.name].push(endPosition.x);
+					// 	positions[node.name].push(endPosition.y);
+					// 	positions[node.name].push(endPosition.z);
+
+			  //           for (var name in node.children)
+				 //        {
+				 //            dfs(endPosition, node.children[name], stack);
+				 //        }
+
+					//     bones[node.name] = node;
+					//     stack.pop();
+				 //    }
+
+			  // 		var root_matrix = rotation_matrix(bones.root, frame.root[3], frame.root[4], frame.root[5]);
+			  //  		dfs(vectorize(frame["root"].slice(0,3)),
+			  //  			subject.root,
+			  //  			[root_matrix]);
+				}
+
+				var tracks = [];
+				for (var jointName in positions)
+				{
+					if (jointName != "root")
+					{
+						tracks.push(new THREE.VectorKeyframeTrack(
+					        	jointName + ".position",
+					        	times,
+					        	positions[jointName]));
+					}
+				}
+
+				console.log(positions);
+
+				// compute key frames for arrows representing the features
+				tracks.push(new THREE.VectorKeyframeTrack(
+					        	"feature1arrow.position",
+					        	times,
+					        	positions["root"]));
+				tracks.push(new THREE.VectorKeyframeTrack(
+					        	"feature2arrow.position",
+					        	times,
+					        	positions["root"]));
+				tracks.push(new THREE.VectorKeyframeTrack(
+					        	"feature3arrow.position",
+					        	times,
+					        	positions["root"]));
+				tracks.push(new THREE.VectorKeyframeTrack(
+					        	"feature4arrow.position",
+					        	times,
+					        	positions["root"]));
+				tracks.push(new THREE.VectorKeyframeTrack(
+					        	"feature5arrow.position",
+					        	times,
+					        	positions["root"]));
+				var quats1 = []; var quats2 = [];
+				var quats3 = []; var quats4 = [];
+				var quats5 = [];
+				for (var i = 0; i < frames.length; ++i)
+				{
+					var frame = frames[i];
+					var q1 = new THREE.Quaternion();
+					var direction1 = math.subtract(positions["lfoot"].slice(i*3, (i+1)*3), frame.root.slice(0,3));
+					feature1.push(direction1);
+					direction1 = math.divide(direction1, math.norm(direction1));
+					direction1 = new THREE.Vector3(direction1[0], direction1[1], direction1[2]);
+					q1.setFromUnitVectors(new THREE.Vector3(0,1,0), direction1);
+					quats1.push(q1.x);
+					quats1.push(q1.y);
+					quats1.push(q1.z);
+					quats1.push(q1.w);
+					var q2 = new THREE.Quaternion();
+					var direction2 = math.subtract(positions["rfoot"].slice(i*3, (i+1)*3), frame.root.slice(0,3));
+					feature2.push(direction2);
+					direction2 = math.divide(direction2, math.norm(direction2));
+					direction2 = new THREE.Vector3(direction2[0], direction2[1], direction2[2]);
+					q2.setFromUnitVectors(new THREE.Vector3(0,1,0), direction2);
+					quats2.push(q2.x);
+					quats2.push(q2.y);
+					quats2.push(q2.z);
+					quats2.push(q2.w);
+					var q3 = new THREE.Quaternion();
+					var direction3 = math.subtract(positions["lhand"].slice(i*3, (i+1)*3), frame.root.slice(0,3));
+					feature3.push(direction3);
+					direction3 = math.divide(direction3, math.norm(direction3));
+					direction3 = new THREE.Vector3(direction3[0], direction3[1], direction3[2]);
+					q3.setFromUnitVectors(new THREE.Vector3(0,1,0), direction3);
+					quats3.push(q3.x);
+					quats3.push(q3.y);
+					quats3.push(q3.z);
+					quats3.push(q3.w);
+					var q4 = new THREE.Quaternion();
+					var direction4 = math.subtract(positions["rhand"].slice(i*3, (i+1)*3), frame.root.slice(0,3));
+					feature4.push(direction4);
+					direction4 = math.divide(direction4, math.norm(direction4));
+					direction4 = new THREE.Vector3(direction4[0], direction4[1], direction4[2]);
+					q4.setFromUnitVectors(new THREE.Vector3(0,1,0), direction4);
+					quats4.push(q4.x);
+					quats4.push(q4.y);
+					quats4.push(q4.z);
+					quats4.push(q4.w);
+					var q5 = new THREE.Quaternion();
+					var direction5 = math.subtract(positions["head"].slice(i*3, (i+1)*3), frame.root.slice(0,3));
+					feature5.push(direction5);
+					direction5 = math.divide(direction5, math.norm(direction5));
+					direction5 = new THREE.Vector3(direction5[0], direction5[1], direction5[2]);
+					q5.setFromUnitVectors(new THREE.Vector3(0,1,0), direction5);
+					quats5.push(q5.x);
+					quats5.push(q5.y);
+					quats5.push(q5.z);
+					quats5.push(q5.w);
+				}
+				tracks.push(new THREE.QuaternionKeyframeTrack(
+					        	"feature1arrow.quaternion",
+					        	times,
+					        	quats1));
+				tracks.push(new THREE.QuaternionKeyframeTrack(
+					        	"feature2arrow.quaternion",
+					        	times,
+					        	quats2));
+				tracks.push(new THREE.QuaternionKeyframeTrack(
+					        	"feature3arrow.quaternion",
+					        	times,
+					        	quats3));
+				tracks.push(new THREE.QuaternionKeyframeTrack(
+					        	"feature4arrow.quaternion",
+					        	times,
+					        	quats4));
+				tracks.push(new THREE.QuaternionKeyframeTrack(
+					        	"feature5arrow.quaternion",
+					        	times,
+					        	quats5));
+
+				var animationClip = new THREE.AnimationClip("default", 0, tracks);
+
+				animationClip.resetDuration();
+
+				mixer.clipAction( animationClip ).play();
+
+				animate();
+			});			
+		});
+
+		window.onresize = function()
+		{
+			camera.aspect = window.innerWidth / window.innerHeight;
+			camera.updateProjectionMatrix();
+
+			renderer.setSize(window.innerWidth, window.innerHeight);
+		};
+
+		function animate()
+		{
+			requestAnimationFrame(animate);
+			render();
+		}
+
+		function render()
+		{
+			var delta = 0.75 * clock.getDelta();
+
+			mixer.update(delta);
+			stats.update();
+
+			if (Math.round(mixer.time * 100) % 10 == 0)
+			{
+				$("#feature1").text(String(feature1[Math.round(mixer.time*100)%feature1.length]));
+				$("#feature2").text(String(feature2[Math.round(mixer.time*100)%feature2.length]));
+				$("#feature3").text(String(feature3[Math.round(mixer.time*100)%feature3.length]));
+				$("#feature4").text(String(feature4[Math.round(mixer.time*100)%feature4.length]));
+				$("#feature5").text(String(feature5[Math.round(mixer.time*100)%feature5.length]));
+			}
+
+			renderer.render(scene, camera);
+		}
+	</script>
+</body>
+</html>
