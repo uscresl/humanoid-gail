@@ -45,6 +45,19 @@ video {
   <p>
     The original GAIL algorithm of Ho et al. <dt-cite key="GAIL"></dt-cite> requires that both states $s$ and corresponding actions $a$ are present in the expert policy. In a real life imitation learning problem, however, such as humanoid motion, the actions (joint torques) are hard to obtain compared to states (joint positions).
   </p>
+  <p>
+    <div style="white-space: pre; font-family: Georgia, serif; border-left:5px solid #ccc; padding: -6px -6px">   <b>Algorithm 1</b>
+    <b>Input:</b> set of demonstrations $\{z^d_t\}_{t=1\dots T^d}$
+    Initialize $\pi_g$ and $D_\phi$ randomly
+    <b>for</b> $i$ in $1 \dots N$ <b>do</b>
+        Sample rollouts from $\pi_g$, $\{z^g_t\}_{t=1\dots T^g}$
+        Calculate rewards $\{r_t = - \log(1 - D_\phi(z^g_t))\}_{t=1\dots T^g}$
+        Update $\theta$ with <i>TRPO</i>
+        <b>for</b> $j$ in $1\dots M$ <b>do</b>
+            $\mathscr{L}(\phi) = \Sigma_{t=1\dots T^g} \log(1 - D_\phi(z^g_t)) - \Sigma_{t=1\dots T^d} \log(D_\phi(z^d_t))$
+            Update $\phi$ with gradient descent
+    <b>Return:</b> $\pi_g$</div>
+  </p>
   <hr>
   <h2>Environment</h2>
     <p>
