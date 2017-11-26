@@ -13,6 +13,11 @@ class HumanoidFeatureEnv(HumanoidEnv):
         mujoco_env.MujocoEnv.__init__(self, os.path.join(os.path.dirname(__file__), 'humanoid_featurized.xml'), 5)
         # self.model.opt.timestep = 0.005
         # self.frame_skip = 6
+        print("*" * 50)
+        print("Time step: %.4f" % self.model.opt.timestep)
+        print("Frame skip: %i" % self.frame_skip)
+        print("dt: %.4f" % self.dt)
+        print("*" * 50)
         utils.EzPickle.__init__(self)
 
     def compute_features(self):

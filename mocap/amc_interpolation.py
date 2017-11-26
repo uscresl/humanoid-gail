@@ -356,7 +356,8 @@ def interpolate(amc_file, output_file, src_framerate, dst_framerate):
 
     f1.close()
     f2.close()
-    print("Successfully sampled %s to %s from frame rate %.2fHz to %.2fHz" % (amc_file, output_file, src_framerate, dst_framerate))
+    print("Successfully sampled %s to %s from frame rate %.2fHz to %.2fHz"
+          % (amc_file, output_file, src_framerate, dst_framerate))
 
 
 if __name__ == "__main__":
@@ -365,5 +366,8 @@ if __name__ == "__main__":
     # else:
     import glob
     for filename in glob.glob("animations/*.amc"):
-        interpolate(filename, filename[:len("animations")] + "_resampled" + filename[len("animations"):], 120, 33.33)
+        interpolate(filename,
+                    filename[:len("animations")] + "_resampled" + filename[len("animations"):],
+                    120,
+                    66.66)
         # interpolate(sys.argv[1], sys.argv[2], float(sys.argv[3]), float(sys.argv[4]))

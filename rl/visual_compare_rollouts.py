@@ -14,7 +14,7 @@ def sanitize_features(features):
     return features
 
 
-def plot_features(features, title=None):
+def plot_old_features(features, title=None):
     global plot_counter
     plot_counter += 1
     plt.figure(plot_counter)
@@ -43,6 +43,34 @@ def plot_features(features, title=None):
     plt.legend()
 
 
+def plot_features(features, title=None):
+    global plot_counter
+    plot_counter += 1
+    plt.figure(plot_counter)
+
+    def label(i):
+        parts = ["head", "left_hand", "right_hand", "left_foot", "right_foot", "delta_root"]
+        xyz = "xyz"
+        return "%s\n%s" % (parts[i // 3], xyz[i % 3])
+
+    violins = []
+    print(features.shape)
+    for i in range(18):
+        violins.append(features[i, :])
+        # for j in range(0, features.shape[0], block_size):
+        #     plt.plot(list(range(j, j+block_size)),
+        #              list(features[j:j+block_size, i].mean() for x in range(block_size)), label=label(i))
+    plt.violinplot(violins, showmeans=False, showmedians=True)
+    plt.gca().set_xticks(range(1, 19))
+    plt.gca().set_xticklabels([label(i) for i in range(18)])
+    plt.grid()
+
+    if title is not None:
+        plt.title(title)
+
+    plt.legend()
+
+
 def load_pickled_features(pkl_file):
     with open(pkl_file, "rb") as f:
         traj_data = pkl.load(f)
@@ -50,6 +78,15 @@ def load_pickled_features(pkl_file):
         for traj in traj_data:
             features.append(traj["features"])
         return np.array([v for ob in features for v in ob])
+
+
+def load_pickled_features_buggy(pkl_file):
+    with open(pkl_file, "rb") as f:
+        traj_data = pkl.load(f)
+        features = []
+        for traj in traj_data:
+            features.append(traj["features"])
+        return np.array(features)
 
 
 def load_pickled_positions(pkl_file):
@@ -119,15 +156,29 @@ def plot_time_positions(positions, keys=["root"], title=None):
     plt.legend()
 
 
+def tabulate_features(features, title=None, scaling=10):
+    target = np.zeros((features.shape[0] * scaling, features.shape[1]))
+    for i in range(features.shape[0]):
+        target[i*scaling:(i+1)*scaling,:] = features[i, :]
+    plt.matshow(target)
+
+    if title is not None:
+        plt.title(title)
+
+
 if __name__ == "__main__":
     env = gym.make("HumanoidFeaturized-v1")
-    trpo_features = load_pickled_features("/home/eric/.deep-rl-docker/gail-tf/gailtf/baselines/ppo1/stochastic.trpo.HumanoidFeaturized.0.00.pkl")
+    # trpo_features = load_pickled_features("/home/eric/.deep-rl-docker/gail-tf/rollout/stochastic.trpo.HumanoidFeaturized.0.00_sensical.pkl")
+    trpo_features = load_pickled_features("/home/eric/.deep-rl-docker/gail-tf/rollout/stochastic.trpo.HumanoidFeaturized.0.00.pkl")
     mocap_features = load_pickled_features("/home/eric/.deep-rl-docker/gail-tf/rollout/mocap_trajectories.pkl")
-    plot_features(trpo_features, title="TRPO")
-    plot_features((mocap_features), title="Mocap")
+    plot_features(trpo_features.T, title="TRPO")
+    plot_features(mocap_features.T, title="Mocap")
     trpo_positions = load_pickled_positions(
-        "/home/eric/.deep-rl-docker/gail-tf/gailtf/baselines/ppo1/stochastic.trpo.HumanoidFeaturized.0.00.pkl")[:3000]
-    mocap_positions = load_pickled_positions("/home/eric/.deep-rl-docker/gail-tf/rollout/mocap_trajectories.pkl")[:1000]
+        "/home/eric/.deep-rl-docker/gail-tf/rollout/stochastic.trpo.HumanoidFeaturized.0.00.pkl")[:2000]
+    mocap_positions = load_pickled_positions("/home/eric/.deep-rl-docker/gail-tf/rollout/mocap_trajectories.pkl")[:2000]
     plot_time_positions(trpo_positions, keys=["root"], title="TRPO")
     plot_time_positions(mocap_positions, keys=["root"], title="Mocap")
+
+    tabulate_features(trpo_features.T, title="TRPO")
+    tabulate_features(mocap_features.T, title="Mocap")
     plt.show()
