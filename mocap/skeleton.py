@@ -18,6 +18,10 @@ class Skeleton(object):
     def compute_motion(self, frame):
         positions = {}
 
+        def sanitize(vector):
+            vector = vector.flatten()
+            return np.array([vector[0, 2], vector[0, 0], vector[0, 1]])
+
         def dfs(position, node, stack):
             angles = np.zeros(3)
             direction = np.zeros(3)
@@ -31,12 +35,12 @@ class Skeleton(object):
 
             L = rotation_matrix(node, angles[0], angles[1], angles[2])
             stack.append(np.dot(L, stack[-1]))
-            endPosition = position + np.dot(direction, stack[-1])
-            positions[node["name"]] = endPosition.copy()
+            end_position = position + np.dot(direction, stack[-1])
+            positions[node["name"]] = sanitize(end_position.copy())
 
             if "children" in node:
                 for child in node["children"].values():
-                    dfs(endPosition, child, stack)
+                    dfs(end_position, child, stack)
 
             stack.pop()
 
