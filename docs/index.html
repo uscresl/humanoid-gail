@@ -10,7 +10,11 @@
 video {
   width: 100%    !important;
   height: auto   !important;
-} 
+}
+
+dt-banner {
+  display: none  !important;
+}
 </style>
 <script type="text/javascript" src="https://www.tuhh.de/MathJax/MathJax.js?config=TeX-AMS_HTML-full"></script>
 
@@ -129,16 +133,63 @@ video {
   </p>
   <h3>Learning from Video</h3>
 
-  <p>Description</p>
+  <p>Learning from motion capture data requires putting markers on actors who demonstrate various skills.
+We try to generalize the problem of learning human skills by learning from videos. The first step to
+achieve this is generate rollouts of three dimensional human poses while performing a skill. Most
+approaches of obtaining a three-dimensional pose from raw images belongs to one of the two
+categories:</p>
+
+<p>
+<ul>1. Using a pipeline approach, where first a 2D pose is estimated from an image. Followed by an
+estimation of the 3D pose from the generated 2D pose.</ul>
+<ul>2. Learning 3D poses directly from images.</ul>
+</p>
+
+<p>We first tried the Pipeline approach using a model trained for 2D pose estimation <dt-cite key="cao2017realtime"></dt-cite>, followed by a
+model to estimate 3D pose <dt-cite key="martinez_2017_3dbaseline"></dt-cite> . We were able to achieve good results for 2D pose estimation but 3D
+pose estimation suffered from restricted movement for skills like walking.</p>
+
+<p>2D pose results for Approach 1:</p>
   <p>
       <video width="100%" controls autoplay loop>
         <source src="videos/VID2D.mov" type="video/mp4">
         Your browser does not support the video tag.
       </video>
-      Caption lala
+      Video to 2D pose estimation
     </p>
+
+<p> The next approach that we experimented with was where we directly learned 3D poses from images using a
+probabilistic 3D human pose model. It overcomes the limitation of the pipeline approach by propagating
+3D information about the skeletal structure to the 2D convolutional layers. In this way, the prediction of
+2D pose benefits from the 3D information encoded <dt-cite key="Tome_2017_CVPR"></dt-cite>. This approach works in two stages. Firstly, belief
+maps obtained from the previous stage (t − 1) are used to predict an updated set of belief maps for the
+2D human joint positions. Secondly, the output of the CNN based belief maps is taken as input to a new
+layer that uses a pretrained probabilistic 3D human pose model to lift the proposed 2D poses into 3D.
+This approach gave us better 3D pose estimations. </p>
+<p> We then extend this approach from images to videos. This is done by first obtaining frames from
+a rollout for a given skill like walking, running etc. The results for this approach can be seen below:</p>
+  <br>
+   <p>
+      <video width="100%" controls autoplay loop>
+        <source src="videos/walk_demo.mp4" type="video/mp4">
+        Your browser does not support the video tag.
+      </video>
+      Video to 2D and 3D pose estimation for walking
+   </p>
+
+  <br> 
+  <br>
+   <p>
+      <video width="100%" controls autoplay loop>
+        <source src="videos/run_demo.mp4" type="video/mp4">
+        Your browser does not support the video tag.
+      </video>
+      Video to 2D and 3D pose estimation for running
+   </p>
+
   <hr>
   <h2>GAIL as Inverse Reinforcement Learning</h2>
+
   <p>
     Although GAIL does not use an explicit reward function to evaluate the generated policy, the discriminator does give a reward signal in some sense. As discussed in Finn et al <dt-cite key="FinnGANIRL"></dt-cite>, a Generative Adversarial Network and by extension the GAIL method can be viewed as an Inverse Reinforcement Learning problem.
   </p>
@@ -218,5 +269,24 @@ video {
   timestamp = {Wed, 07 Jun 2017 14:40:23 +0200},
   biburl    = {http://dblp.org/rec/bib/journals/corr/FinnCAL16},
   bibsource = {dblp computer science bibliography, http://dblp.org}
+}
+@inproceedings{cao2017realtime,
+  author = {Zhe Cao and Tomas Simon and Shih-En Wei and Yaser Sheikh},
+  booktitle = {CVPR},
+  title = {Realtime Multi-Person 2D Pose Estimation using Part Affinity Fields},
+  year = {2017}
+}
+@inproceedings{martinez_2017_3dbaseline,
+  title={A simple yet effective baseline for 3d human pose estimation},
+  author={Martinez, Julieta and Hossain, Rayat and Romero, Javier and Little, James J.},
+  booktitle={ICCV},
+  year={2017}
+}
+@InProceedings{Tome_2017_CVPR,
+author = {Tome, Denis and Russell, Chris and Agapito, Lourdes},
+title = {Lifting From the Deep: Convolutional 3D Pose Estimation From a Single Image},
+booktitle = {The IEEE Conference on Computer Vision and Pattern Recognition (CVPR)},
+month = {July},
+year = {2017}
 }
 </script>
