@@ -45,8 +45,29 @@ video {
   <p>
     The original GAIL algorithm of Ho et al. <dt-cite key="GAIL"></dt-cite> requires that both states $s$ and corresponding actions $a$ are present in the expert policy. In a real life imitation learning problem, however, such as humanoid motion, the actions (joint torques) are hard to obtain compared to states (joint positions).
   </p>
+  <p>
+  In a normal GAN there are two loss functions that can be both optimized by regular gradient descent algorithms, separately; one for the discriminator and one for the generator. In GAIL, however, the generator network $G_\theta$ acts as a policy $\pi_g$, which requires a policy gradient method. Based on the rollouts $\{z^g_t\}_{t=1\dots T^g}$ of $\pi_g$, and the rewards $\{r_t\}_{t=1\dots T^g}$ associated with each $z^g_t$ that are calculated by the discriminator, the policy gradient method is able to update $\theta$. Contrary to regular GAN practice, the rewards calculated by the discriminator are found to yield better results when $r_t = -\log(1 - D_\phi(\cdot))$ was used compared to $\log(D_\phi(\cdot))$<dt-cite key="DeepMindGAIL"></dt-cite>.
+
+  The loss function to be optimized for the discriminator $D_\phi$ is much like in a regular GAN:
+  $$\mathscr{L}(\phi) = \Sigma_{t=1\dots T^g} \log(1 - D_\phi(z^g_t)) - \Sigma_{t=1\dots T^d} \log(D_\phi(z^d_t))$$ After the generator's paramters $\theta$ are updated, the discriminator's parameters $\phi$ are updated $M$ times. Algorithm 1 gives pseudocode of the GAIL policy training.
+
+  </p>
+  <p>
+    <div style="white-space: pre; font-family: Georgia, serif; border-left:5px solid #ccc; padding: -6px -6px">   <b>Algorithm 1</b>
+    
+    <b>Input:</b> set of demonstrations $\{z^d_t\}_{t=1\dots T^d}$
+    Initialize $\pi_g$ and $D_\phi$ randomly
+    <b>for</b> $i$ in $1 \dots N$ <b>do</b>
+        Sample rollouts $\{z^g_t\}_{t=1\dots T^g}$ from $\pi_g$ in the environment $E$
+        Calculate rewards $\{r_t = - \log(1 - D_\phi(z^g_t))\}_{t=1\dots T^g}$
+        Update $\theta$ with <i>TRPO</i>
+        <b>for</b> $j$ in $1\dots M$ <b>do</b>
+            $\mathscr{L}(\phi) = \Sigma_{t=1\dots T^g} \log(1 - D_\phi(z^g_t)) - \Sigma_{t=1\dots T^d} \log(D_\phi(z^d_t))$
+            Update $\phi$ with gradient descent
+    <b>Return:</b> $\pi_g$</div>
+  </p>
   <hr>
-  <h2>Environment</h2>
+  <h2>Environment $E$</h2>
     <p>
       Both <a href="http://mujoco.org/">MuJoCo</a> and <a href="https://github.com/openai/roboschool">OpenAI Roboschool</a> are used as physics engines for simulation environments, in which actions $a$ can be taken and the state $s$ can be sampled at any moment:
       <ul>
@@ -65,12 +86,12 @@ video {
       Note that this skeleton is not necessarily exactly the same as the one used in the expert policy. The imitation learning evaluation and rollout is based solely on the states of five vectors representing the 3D end effector positions of the feet, hands and head. The generated policy $\pi_G$ does take actions on all 5X joints.
     </p>
   <hr>
-  <h2>Generated Policy $\pi_G$ <font color="red">(Needs work)</font></h2>
+  <h2>Generated Policy $\pi_g$ <font color="red">(Needs work)</font></h2>
     <p>
       The policy network consists of a 3 layer network with neuron widths of (300, 200, 100). The size of this network scales proportionally with the degrees of freedom present in the target skeleton.
     </p>
   <hr>
-  <h2>Expert Policy $\pi_E$</h2>
+  <h2>Expert Policy $\pi_d$</h2>
     <p>
       A fundamental component in the system is the skill which needs to be learned. This skill can be any movement of the human body. Such a skill can be seen as a rollout (series of states $\{s_1, s_2, \ldots,s_n\}$ at discrete timesteps $\{t_1, t_2, \ldots, t_n\}$) of the implicit expert policy $\pi_E$ which has a state $s$ to action $a$ mapping. With an increasing level of complexity the system accepts expert input from three sources:  
       <ol>
@@ -103,7 +124,14 @@ video {
   </p>
   <h3>Learning from Video</h3>
 
-  <p>A first step towards In this classical setting an agent in an environment is trains a policy of operation using a reinforcement learning algorithm. In our case we opted for Trusted Region Policy Optimization (TRPO) which has a parallellized implementation in Baselines. We trained our modified MOCAP skeleton using TRPO for 10.000 iterations. The result after XXX (1900) iterations is shown below:</p>
+  <p>Description</p>
+  <p>
+      <video width="100%" controls autoplay loop>
+        <source src="videos/VID2D.mov" type="video/mp4">
+        Your browser does not support the video tag.
+      </video>
+      Caption lala
+    </p>
   <hr>
   <h2>GAIL as Inverse Reinforcement Learning</h2>
   <p>
@@ -115,6 +143,12 @@ video {
     We were able to imitate humanoid motion directly from video, which extends on humanoid imitation on pure motion capture data. This encompasses a large reduction in terms of effort which needs to be done for dataset collection for imitation learning.
 
     Possible further work: multi-task learning.
+  </p>
+  <hr>
+  <h2>Acknowledgements</h2>
+  <p>
+    The data used in this project was obtained from <a href="http://mocap.cs.cmu.edu">mocap.cs.cmu.edu</a>.
+    The database was created with funding from NSF EIA-0196217.
   </p>
 </dt-article>
 
