@@ -123,7 +123,7 @@ dt-banner {
         <hr>
         <h2>Demonstrator Policy $\pi_d$</h2>
         <p>
-            The expert skill can be any movement of the human body. Such a skill can be represented as a rollout (series of states $\{s_1, s_2, \ldots,s_n\}$ at discrete timesteps $\{t_1, t_2, \ldots, t_n\}$) generated from the implicit expert policy $\pi_d$, which is a function mapping the state of the expert $s$ to its next action from that state $a$. We attempted to train the system from three sources of expert demonstrations, presented in order of increasing complexity.
+            The expert skill can be any movement of the human body, such as walking or running. Such a skill can be represented as a rollout (series of states $\{s_1, s_2, \ldots,s_n\}$ at discrete timesteps $\{t_1, t_2, \ldots, t_n\}$) generated from the implicit expert policy $\pi_d$, which is a function mapping the state of the expert $s$ to its next action from that state $a$. We attempted to train the system from three sources of expert demonstrations, presented in order of increasing complexity.
             <ol>
                 <li>Reinforcement Learned Policy</li>
                 <li>Motion Capture Data</li>
@@ -131,11 +131,11 @@ dt-banner {
             </ol>
         </p>
         <p>
-            These three different rollout sources give rise to important complications and training from each has their own challenges, which we discuss in detail below.
+            These three different demonstration sources give rise to important complications, and training from each has their own challenges, which we discuss in detail below.
         </p>
         <h3>Learning from Artificial Experts (RL)</h3>
         <p>
-            The simplest way of testing a GAIL is to imitate a policy obtained through direct <i>Reinforcement Learning (RL)</i>, in which the agent learns to perform skills in an environment based on a given reward function by attempting to maximize a reward function. This method is employed in the original GAIL paper of Ho et al.
+            The simplest way of testing GAIL is to imitate a policy obtained through direct <i>Reinforcement Learning (RL)</i>, which is solved by a Markov Decision Process (MDP) in which an agent takes actions in the environment to maximize a cumulative reward. Learning from RL experts is employed in the original GAIL paper of Ho et al.
             <dt-cite key="GAIL"></dt-cite>. Note that an RL policy provides both states and actions, but actions are difficult to observe in the real world. The results of our Trust Region Policy Optimization (TRPO) RL policy and its learned GAIL policy are shown in the video below.
         </p>
         <p>
@@ -147,7 +147,7 @@ dt-banner {
         <h3>Learning from Motion Capture Data</h3>
         <p>
             A setting much closer to reality is to imitate motion capture data. Here the input rollout source does not provide any actions nor rewards. Motion capture data is obtained by attaching trackable markers to actors, who then perform recorded skill demonstrations inside a special tracking system. The CMU Graphics Lab's Motion Capture Database (MOCAP) provides several skills such as walking and jumping
-            <dt-cite key="MOCAP"></dt-cite>. As this data only provides states, we adapted the GAIL to function without expert actions available, as in Merel et al.
+            <dt-cite key="MOCAP"></dt-cite>. As this data only provides states, we adapted GAIL to function without expert actions available, as in Merel et al.
             <dt-cite key="DeepMindGAIL"></dt-cite>.
         </p>
         <h3>Learning from Video</h3>
