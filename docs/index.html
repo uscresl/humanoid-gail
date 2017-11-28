@@ -146,13 +146,13 @@ dt-banner {
         </p>
         <h3>Learning from Motion Capture Data</h3>
         <p>
-            A setting much closer to reality is to imitate motion capture data. Here the input rollout source does not provide any actions nor rewards. Motion capture data is obtained by attaching trackable markers to actors, who then perform recorded skill demonstrations inside a special tracking system. The CMU Graphics Lab's Motion Capture Database (MOCAP) provides several skills such as walking and jumping
+            A setting much closer to reality is to imitate motion capture data. Here, the demonstrator does not provide any actions nor rewards. Motion capture data is obtained by attaching trackable markers to human actors, who perform recorded skill demonstrations in front of a special tracking system. The CMU Graphics Lab's Motion Capture Database (MOCAP) provides several skills, such as walking and jumping
             <dt-cite key="MOCAP"></dt-cite>. As this data only provides states, we adapted GAIL to function without expert actions available, as in Merel et al.
-            <dt-cite key="DeepMindGAIL"></dt-cite>.
+            <dt-cite key="DeepMindGAIL"></dt-cite>, also referred to as S-GAIL <dt-cite key="Bailey2016"></dt-cite>.
         </p>
         <h3>Learning from Video</h3>
         <p>
-            Learning from motion capture data requires putting markers on actors who demonstrate various skills, and asking them for perform in an expensive tracking system. We would like to instead learn skills directly from video. The first step to achieve this, within our existing GAIL framework, is generate rollouts of three dimensional human poses while performing a skill. Most approaches of obtaining a three-dimensional pose from raw images belongs to one of two categories:
+            Learning from motion capture data requires putting markers on actors who demonstrate various skills, and asking them to perform in an expensive tracking system. We would like to instead learn skills directly from video. The first step to achieve this, within our existing GAIL framework, is generate rollouts of three dimensional human poses while performing a skill. Most approaches of obtaining a three-dimensional pose from raw images belongs to one of two categories:
         </p>
         <ol>
             <li>Using a pipeline approach, where first a 2D pose is estimated from an image. Followed by an estimation of the 3D pose from the generated 2D pose.</li>
