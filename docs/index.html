@@ -33,7 +33,7 @@ dt-banner {
 </script>
 <dt-article class="centered" style="text-align:justify">
     <h1>Humanoid Imitation Learning from Video</h1>
-    <h2 style="text-align:justify">This post describes our experience implementing a system which learns movement skills for humanoid figures from imitation, and all of the supporting infrastructure and data processing necessary to do so. Our system employs a generative adversarial imitation learning (GAIL) architecture, which is a type of generative adversarial network. We successfully trained our GAIL to control a custom-designed humanoid skeleton, using expert demonstrations from an RL policy learned using that skeleton. We also explored several methods for deriving humanoid skeleton demonstrations from video data, developed a preprocessing pipeline for motion capture data. We hope to refine our system in the future to learn from motion capture data and directly from videos of human walking. Our system is a work-in-progress, which is the foundation for several possible future research projects.
+    <h2 style="text-align:justify">This post describes our experience implementing a system which learns locomotion skills for humanoid skeletons from imitation, and all of the supporting infrastructure and data processing necessary to do so. Our system employs a generative adversarial imitation learning (GAIL) architecture, which is a type of generative adversarial network. We successfully trained our GAIL to control a custom-designed humanoid skeleton, using expert demonstrations from a reinforment-learned (RL) policy learned using that skeleton. We also explored several methods for deriving real human motion demonstrations from video and developed a preprocessing pipeline for motion capture data. We hope to refine our system in the future to learn from motion capture recordings and directly from videos of human locomotion. Our system is work-in-progress, making it the foundation for several possible future research projects.
     </h2>
     <dt-byline></dt-byline>
     <h2>Introduction to GAIL</h2>
@@ -41,16 +41,16 @@ dt-banner {
       $$\min_{\theta} \mathrm{E}_{s,a \sim p(s,a)}[L(D_{\theta}(s,a), 1)] + \mathrm{E}_{z \sim q(z)}[L(D_{\theta}(G_{\phi}(z)), 0)]$$ $$\max_{\phi} \mathrm{E}_{z \sim q(z)}[L(D_{\theta}(G_{\phi}(z)), 0)]$$
     </p>-->
     <p>
-        Generative adversarial imitation learning (GAIL) is a deep neural network architecture for imitation learning, wherein an agent ("learner") learns a skill by observing the behavior of another agent ("expert"). It is based on the popular generative adversarial network (GAN) architecture, in which the network is divided into two principal functional blocks engaged in an adversarial game: the "discriminator" (or "critic") learns to distinguish real training examples from examples created by the network, while the "generator" (or "actor") block learns to produce convincing counterfeits of real examples meant to fool the discriminator. Those counterfeits are also the useful output of a well-trained network.
+        Generative adversarial imitation learning (GAIL) is a deep neural network architecture for imitation learning, wherein an agent ("learner") learns a skill by observing the behavior of another agent ("expert"). It is based on the popular generative adversarial network (GAN) architecture, in which the network is divided into two principal functional blocks engaged in an adversarial game: the "discriminator" (or "critic") learns to distinguish real training examples from examples created by the network, while the "generator" (or "actor") module learns to produce convincing trajectories meant to fool the discriminator.
     </p>
     <p>
-        A key fact for applying GANs to imitation learning is that the generator is never exposed to real world training examples, only the discriminator. In GAIL, the discriminator learns to distinguish generated performances from expert demonstrations, while the generator attempts to mimic the expert convincingly-enough to fool the discriminator into thinking its performance was an expert demonstration. In our use of GAIL, the expert demonstrations are time-series humanoid motion traces from a variety of sources (motion capture, video, artificially-trained simulations), and the output of the generator is a policy $\pi_g$ (a function mapping from states $s$ to actions $a$) for moving a humanoid model in simulation to mimic those demonstrated motions.
+        A key fact for applying GANs to imitation learning is that the generator is never exposed to real world training examples, only the discriminator. In GAIL, the discriminator learns to distinguish generated performances from expert demonstrations, while the generator attempts to mimic the expert convincingly-enough to fool the discriminator into thinking its performance was an expert demonstration. In our setting of GAIL, the expert demonstrations are time-series humanoid locomotion trajectories from a variety of sources (motion capture, video, artificially-trained experts via RL), and the output of the generator is a policy $\pi_g$ (a function mapping from states $s$ to actions $a$) for moving a humanoid model in simulation to mimic those demonstrated motions.
     </p>
     <hr>
     <h2>Our GAIL Implementation</h2>
     <p>
         The original GAIL formulation introduced by Ho et al.
-        <dt-cite key="GAIL"></dt-cite> proposes that expert demonstrations containing both states $s$ and corresponding actions $a$ are presented to the discriminator. In a real life imitation learning problem, such as humanoid motion, the actions (e.g. joint torques) are difficult to obtain compared to states (e.g. joint positions). Our work attempts to address this and other practical problems in using GAIL for imitation learning outside simulated environments. An architectural overview of how our implemented system is constructed, and what it is capable of, is shown below.
+        <dt-cite key="GAIL"></dt-cite> proposes a method where expert demonstrations containing both states $s$ and corresponding actions $a$ are presented to the discriminator. In a real-life imitation learning problem, such as humanoid motion, the actions (e.g. joint torques) are difficult to obtain compared to states (e.g. joint positions) as it would require solving complex inverse kinematics problems. Our work attempts to address this and other practical settings in using GAIL for imitation learning outside simulated environments. An architectural overview of how our implemented system is constructed, and what it is capable of, is shown below.
     </p>
     <p>
     <div class="l-middle-outset">
@@ -65,11 +65,11 @@ dt-banner {
     </div>
     </p>
     <p>
-        In the canonical GAN formulation there are two loss functions that can be both optimized by regular gradient descent algorithms, separately. One loss function for the discriminator and one for the generator. In GAIL, however, the generator network $G_\theta$ encodes a policy $\pi_g$ and cannot be trained with simple gradient descent. We use a policy gradient method to train the generator, though there are also non-gradient methods explored in the literature. Based on the rollouts $\{z^g_t\}_{t=1\dots T^g}$ of $\pi_g$, and the rewards $\{r_t\}_{t=1\dots T^g}$ associated with each $z^g_t$ that are calculated by the discriminator, the policy gradient method updates $\theta$, the parameters representing the policy function. Also contrary to typical GAN practice, the reward input to policy gradient, as calculated by the discriminator, is found in the literature to yield better results when presented as $r_t = -\log(1 - D_\phi(\cdot))$ as opposed to $\log(D_\phi(\cdot))$
+        In the canonical GAN formulation there are two loss functions that can be both optimized by regular gradient descent algorithms, separately: One loss function for the discriminator and one for the generator. In GAIL, however, the generator network $G_\theta$ encodes a policy $\pi_g$ and cannot be trained with simple gradient descent. We use a policy gradient method to train the generator, though there are also non-gradient methods explored in the literature. Based on the rollouts $\{z^g_t\}_{t=1\dots T^g}$ of $\pi_g$, and the rewards $\{r_t\}_{t=1\dots T^g}$ associated with each $z^g_t$ that are calculated by the discriminator, the policy gradient method updates $\theta$, the parameters representing the policy function. Also contrary to typical GAN practice, the reward input to policy gradient, as calculated by the discriminator, is found in the literature to yield better results when presented as $r_t = -\log(1 - D_\phi(\cdot))$ as opposed to $\log(D_\phi(\cdot))$
         <dt-cite key="DeepMindGAIL"></dt-cite>. The loss function to be optimized for the discriminator $D_\phi$ is much like in a regular GAN: $$\mathscr{L}(\phi) = \Sigma_{t=1\dots T^g} \log(1 - D_\phi(z^g_t)) - \Sigma_{t=1\dots T^d} \log(D_\phi(z^d_t))$$ After the generator's parameters $\theta$ are updated, the discriminator's parameters $\phi$ are updated $M$ times. Algorithm 1 gives pseudocode of the GAIL policy training.
     </p>
     <p>
-        <div style="white-space: pre; font-family: Georgia, serif; border-left:5px solid #ccc; padding: -6px -6px"> <b>Algorithm 1</b>
+        <div style="white-space: pre; font-family: Georgia, serif; border-left:5px solid #ccc; padding-left: 16px"> <b>Algorithm 1</b>
             <b>Input:</b>
               set of demonstrations $\{z^d_t\}_{t=1\dots T^d}$ Initialize $\pi_g$ and $D_\phi$ randomly
             <b>for</b> $i$ in $1 \dots N$ <b>do</b>
@@ -94,10 +94,10 @@ dt-banner {
             </li>
         </ul>
         <p>
-            Our original ambition was to use Roboschool exclusively for our target humanoid environment. However, we found that our implementation of TRPO, based on Open AI Baselines, is highly-tuned for MuJoCo and failed to train in Roboschool environments. All experiments detailed herein used MuJoCo as the simulation environment.
+            Our original ambition was to use Roboschool exclusively for our target humanoid environment. However, we found that our implementation of TRPO, based on Open AI Baselines, is highly tuned for MuJoCo and failed to train in Roboschool environments. All experiments detailed herein used MuJoCo as the simulation environment.
         </p>
         <p>
-            We engineered a custom MuJoCo humanoid skeleton in an attempt to approximate of a real human body in terms of relative length and weight of the joints. The skeleton used both is shown in the figure below.
+            We engineered a custom MuJoCo humanoid skeleton in an attempt to approximate a real human body in terms of relative length and weight of the joints. The skeleton used is shown in the figure below.
         </p>
             <div class="l-body-outset">
                 <img class="l-body-outset" src="images/skeleton.png">
