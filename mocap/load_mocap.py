@@ -39,7 +39,7 @@ def load_positions(asf_file=os.path.join(os.path.dirname(__file__), "examples/12
 def load_features(asf_file=os.path.join(os.path.dirname(__file__), "examples/12.asf"),
                   amc_file=os.path.join(os.path.dirname(__file__), "examples/02_01.amc"),
                   forward_vector_frames=10,
-                  frames_per_feature=3):
+                  frames_per_feature=1):
     """Computes the 5 3D vectors over all animation frames of the AMC file. Returns a Tx15 matrix."""
     parser = AsfParser()
     parser.parse(asf_file)
@@ -57,7 +57,7 @@ def load_features(asf_file=os.path.join(os.path.dirname(__file__), "examples/12.
         previous_pos = positions[-forward_vector_frames]["root"]
         for j in range(-forward_vector_frames+1, 0):
             next_pos = positions[j]["root"]
-            forward_vector += normalize(next_pos-previous_pos)
+            forward_vector += next_pos-previous_pos
             previous_pos = next_pos.copy()
         forward_vector /= forward_vector_frames
 
