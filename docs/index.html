@@ -98,7 +98,7 @@ dt-banner {
             Our original ambition was to use Roboschool exclusively for our target humanoid environment. However, we found that our implementation of TRPO, based on Open AI Baselines, is highly-tuned for MuJoCo and failed to train in Roboschool environments. All experiments detailed herein used MuJoCo as the simulation environment.
         </p>
         <p>
-            We engineered a custom MuJoCo humanoid skeleton in an attempt to approximate of a real human body in terms of relative length and weight of the joints. The skeleton used both is shown in the figure below.
+            We engineered a custom MuJoCo humanoid skeleton in an attempt to approximate a real human body in terms of relative length and weight of the joints. The final skeleton is shown below.
         </p>
             <div class="l-body-outset">
                 <img class="l-body-outset" src="images/skeleton.png">
@@ -108,7 +108,7 @@ dt-banner {
         </p>
         <h2>Motion Capture Extraction and Resampling</h2>
         <p>
-          The CMU motion capture dataset provides AMC files which contain the joint angle definitions for various motions (e.g. walking, dancing, etc.) of the full humanoid skeleton at a frequency of 120Hz. We created an automated tool to intepret the AMC files, down-sample data to the same frame rate as our simulator, and generate the rollouts from motion capture data. For this project we down-sampled the animation to a frequency of approximately 33.33Hz using cubic spline interpolation.
+          The CMU motion capture dataset provides AMC files which contain the joint angle definitions for various motions (e.g. walking, dancing, etc.) of the full humanoid skeleton at a frequency of 120Hz. We created an automated tool to intepret the AMC files, down-sample data to the same frame rate as our simulator, and generate the rollouts from motion capture data. For this project we down-sampled the animation to a frequency of approximately 66.67Hz using cubic spline interpolation.
         </p>
         <hr>
         <h2>Generator Policy Network $\pi_g$</h2>
@@ -147,7 +147,7 @@ dt-banner {
         </p>
         <h3>Learning from Video</h3>
         <p>
-            Learning from motion capture data requires putting markers on actors who demonstrate various skills, and asking them for perform in an expensive tracking system. We would like to instead learn skills directly from video. The first step to achieve this, within our existing GAIL framework, is generate rollouts of three dimensional human poses while performing a skill. Most approaches of obtaining a three-dimensional pose from raw images belongs to one of two categories:
+            Learning from motion capture data requires putting markers on actors who demonstrate various skills, and asking them for perform in an expensive tracking system. Instead we would rather like to learn skills directly from video. The first step to achieve this, within our existing GAIL framework, is generate rollouts of three dimensional human poses while performing a skill. Most approaches of obtaining a three-dimensional pose from raw images belongs to one of two categories:
         </p>
         <ol>
             <li>Using a pipeline approach, where first a 2D pose is estimated from an image. Followed by an estimation of the 3D pose from the generated 2D pose.</li>
@@ -180,7 +180,7 @@ dt-banner {
         <hr>
         <h2>Achievements</h2>
         <p>
-          We implemented a deep RL development environment and tools for doing our research. We also trained expert RL policies, train GAIL policies from those experts, and attempted (unsuccessfully, so far) to train GAIL policies from motion capture and video. We also implemented two approaches for human pose reconstruction from video, using three pretrained networks from the literature. We hope plan on continuing this research in the future.
+          We implemented a deep RL development environment and tools for doing our research. We also trained expert RL policies, and trained GAIL policies from those experts. We also implemented two approaches for human pose reconstruction from video, using three pretrained networks from the literature. We hope plan on continuing this research in the future.
           <ul>
             <li>Implemented deep RL training environment using Docker, with support for GPUs, OpenGL visualization, TensorFlow, MuJoCo, Roboschool, Jupyter Notebook, and many other tools. The environment runs on Windows, Mac, and Linux and is easy to use with cloud computing providers.</li>
             <li>Learned how to use Google Cloud to train on many CPUs at once</li>
@@ -202,13 +202,13 @@ dt-banner {
             <li>GAIL, like all GANs, tends to be very unstable and hard to train</li>
             <li>Ingesting outside data sources required a substantial amount of work in interpreting and preprocessing the data</li>
             <li>Pipeline approaches are simpler to understand and train, but every step in the pipeline creates a failure mode. End-to-end approaches allow the learner to backpropagate failures through the pipeline to compensate, and can be more robust.
-            <li>The formulation of GAIL for humanoids from Merel et al. <dt-cite key="DeepMindGAIL"></dt-cite> is very brittle to the target humanoid and the feature representation chosen for rollouts<. This is an opportunity for future work.</li>
-            <li>Training deep RL policies with high-dimensional agents like humanoids requires very large amounts of CPU-based computing</li>
+            <li>The formulation of GAIL for humanoids from Merel et al. <dt-cite key="DeepMindGAIL"></dt-cite> is very brittle to the target humanoid and the feature representation chosen for rollouts. This is an opportunity for future work.</li>
+            <li>Training deep RL policies with high-dimensional agents like humanoids requires very large amounts of CPU-based computing.</li>
           </ul>
         </p>
         <h2>Conclusion and future work</h2>
         <p>
-            Our goals in this project was to familiarize ourselves with state-of-the-art deep RL software and research techniques, while reimplementing previous work and laying a foundation for future research. While we did not successfully reimplement the results from <dt-cite key="DeepMindGAIL"></dt-cite>, we certainly achieved our two other goals. We now have a deep RL training environment and workflow, and several future research directions we hope to pursue and publish in peer-reviewed forums.
+            Our goals in this project was to familiarize ourselves with state-of-the-art deep RL software and research techniques, while reimplementing previous work and laying a foundation for future research. While we did not exactly reimplement the results from <dt-cite key="DeepMindGAIL"></dt-cite>, we certainly achieved our two other goals. We now have a deep RL training environment and workflow, and several future research directions we hope to pursue and publish in peer-reviewed forums.
         </p>
         <p>
             Possible directions include:
@@ -222,7 +222,7 @@ dt-banner {
         <hr>
         <h2>Acknowledgements</h2>
         <p>
-            We would like to express our appreciation to <a href="https://andrewliao11.github.io/">Andrew Liao</a> for providing the TensorFlow-based GAIL implementation used in this research. We would also like to thank our TAs Aartem Molchanov and Shao-Hua Sun, and Prof. Joseph Lim for their guidance and support. The motion capture data used in this research was obtained from <a href="http://mocap.cs.cmu.edu">mocap.cs.cmu.edu</a>. The database was created with funding from NSF EIA-0196217.
+            We would like to express our appreciation to <a href="https://andrewliao11.github.io/">Andrew Liao</a> for providing the TensorFlow-based GAIL implementation used in this research. We would also like to thank our TAs Artem Molchanov and Shao-Hua Sun, and Prof. Joseph Lim for their guidance and support. The motion capture data used in this research was obtained from <a href="http://mocap.cs.cmu.edu">mocap.cs.cmu.edu</a>. The database was created with funding from NSF EIA-0196217.
         </p>
 </dt-article>
 <dt-appendix class="centered">
