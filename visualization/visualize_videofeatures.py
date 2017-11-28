@@ -12,7 +12,8 @@ def load_pickled_features(pkl_file):
 def plot_time_features(features, title=None):
     xyz = "xyz"
     animation = {}
-    keys = {"Head", "LFoot", "RFoot", "LWrist", "RWrist"}
+    #keys = {'Head', 'LFoot', 'RFoot', 'LWrist', 'RWrist'}
+    keys = {'LWrist'}
     print(features[0])
     for key in keys:
         for d in xyz:
@@ -35,5 +36,5 @@ def plot_time_features(features, title=None):
 
 
 if __name__ == "__main__":
-    features = load_pickled_features("joints_abs.pkl")
+    features = load_pickled_features("joints.pkl")
     plot_time_features(features, title="Video Pose Estimation")
