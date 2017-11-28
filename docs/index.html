@@ -98,21 +98,7 @@ dt-banner {
         <p>
           The CMU motion capture dataset provides AMC files which contain the joint angle definitions for various motions (e.g. walking, dancing, etc.) of the full humanoid skeleton at a frequency of 120Hz. We created an automated tool to intepret the AMC files, down-sample data to the same frame rate as our simulator, and generate the rollouts from motion capture data. For this project we down-sampled the animation to a frequency of approximately 33.33Hz using cubic spline interpolation.
         </p>
-        <p>
-          <video width="100%" controls autoplay loop>
-            <source src="videos/Dance_120HZ.mp4" type="video/mp4">
-                  Your browser does not support the video tag.
-          </video>
-          Dancing at 120Hz from motion capture data
-        </p>
-
-        <p>
-          <video width="100%" controls autoplay loop>
-            <source src="videos/Dance_33HZ.mp4" type="video/mp4">
-              Your browser does not support the video tag.
-          </video>
-          Dancing at 33.33Hz from motion capture data after cubic spline interpolation
-        </p>
+        <hr>
         <h2>Generator Policy Network $\pi_g$</h2>
         <p>
             Our final policy network consists of a 3 layer network with neuron widths of (150, 150, 150). We also experimented with dual layer networks of hidden shape (32, 32) and (64, 64), but found the larger network necessary for reliable performance. We found that the size of the network necessary for adequate performance scales proportionally with the degrees of freedom present in the target skeleton. Unfortunately, larger networks also slowed training significantly.
