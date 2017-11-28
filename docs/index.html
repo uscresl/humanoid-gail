@@ -185,17 +185,17 @@ dt-banner {
         <hr>
         <h2>Achievements</h2>
         <p>
-          We implemented a deep RL development environment and tools for doing our research. We also trained expert RL policies, and trained GAIL policies from those experts. We also implemented two approaches for human pose reconstruction from video, using three pretrained networks from the literature. We hope plan on continuing this research in the future.
+          We implemented a deep RL development environment and tools for doing our research. We also trained expert RL policies, and trained GAIL policies from those experts. We also implemented two approaches for human pose reconstruction from video, using three pretrained networks from the literature. We plan on continuing this research in the future. The following tasks have been accomplished:
           <ul>
-            <li>Implemented deep RL training environment using Docker, with support for GPUs, OpenGL visualization, TensorFlow, MuJoCo, Roboschool, Jupyter Notebook, and many other tools. The environment runs on Windows, Mac, and Linux and is easy to use with cloud computing providers.</li>
+            <li>Implemented deep RL training environment using Docker, with support for GPUs, OpenGL visualization, TensorFlow, MuJoCo, Roboschool, Jupyter Notebook, and many other tools. The environment runs on Mac and Linux and is easy to use with cloud computing providers.</li>
             <li>Learned how to use Google Cloud to train on many CPUs at once</li>
-            <li>Created custom instrumented humanoid skeleton and training environment in MuJoCo and Roboschool</li>
-            <li>Implemented motion capture data interpreter and time-series resampling pipeline</li>
+            <li>Created custom humanoid skeletons and training environments in MuJoCo and Roboschool</li>
+            <li>Implemented motion capture data interpreter (for ASF and AMC files) and time-series resampling pipeline</li>
             <li>Trained humanoid walking policies on a custom skeleton using TRPO</li>
-            <li>Trained GAIL walking policies using TRPO-based expert</li>
-            <li>Implemented humanoid policy rollout visualizer with feature overlays</li>
+            <li>Trained GAIL walking policies from a TRPO-based expert</li>
+            <li>Implemented a <a href="http://eric-heiden.com/mocap-visualizer">humanoid policy rollout visualizer</a> with feature overlays in JavaScript</li>
             <li>Collected human walking video demonstrations</li>
-            <li>Experimented with video→2D pose→3D pose pipeline approach for human pose estimation from video, using two pretrained networks from the literature</li>
+            <li>Experimented with video → 2D pose → 3D pose pipeline approach for human pose estimation from video, using two pretrained networks from the literature</li>
             <li>Experimented with end-to-end video→3D approach for human pose estimation from video, using a pretrained network from the literature</li>
             <li>Experimented with GAIL target humanoid, policy network shape, and rollout feature representations to attain a stable GAIL using RL policy as expert</li>
           </ul>
@@ -213,7 +213,7 @@ dt-banner {
         </p>
         <h2>Conclusion and future work</h2>
         <p>
-            Our goals in this project was to familiarize ourselves with state-of-the-art deep RL software and research techniques, while reimplementing previous work and laying a foundation for future research. While we did not exactly reimplement the results from <dt-cite key="DeepMindGAIL"></dt-cite>, we certainly achieved our two other goals. We now have a deep RL training environment and workflow, and several future research directions we hope to pursue and publish in peer-reviewed forums.
+            Our goal in this project was to familiarize ourselves with state-of-the-art deep RL software and research techniques, while reimplementing previous work and laying a foundation for future research. While we did not exactly reimplement the results from <dt-cite key="DeepMindGAIL"></dt-cite>, we certainly achieved our two other goals. We now have a deep RL training environment and workflow, as well as several future research directions we hope to pursue and publish in peer-reviewed forums.
         </p>
         <p>
             Possible directions include:
@@ -221,7 +221,7 @@ dt-banner {
               <li>One-shot imitation learning from video using a GAIL network pretrained from a simulated expert</li>
               <li>Learning feature representations for the expert demonstrations to avoid feature engineering for each new target morphology</li>
               <li>Exploring architectures and roll-out representations (e.g. Fourier coefficients, etc.) which are more effective for time-domain motion data</li>
-              <li>Using GAIL as the foundation for a multi-task imitation learner</li>
+              <li>Using GAIL as the foundation for a multi-task imitation learning</li>
             </ul>
         </p>
         <hr>
