@@ -33,7 +33,20 @@ dt-banner {
 </script>
 <dt-article class="centered" style="text-align:justify">
     <h1>Humanoid Imitation Learning from Video</h1>
-    <h2 style="text-align:justify">This post describes our experience implementing a system which learns movement skills for humanoid figures from imitation, and all of the supporting infrastructure and data processing necessary to do so. Our system employs a generative adversarial imitation learning (GAIL) architecture, which is a type of generative adversarial network. We successfully trained our GAIL to control a custom-designed humanoid skeleton, using expert demonstrations from an RL policy learned using that skeleton. We also explored several methods for deriving humanoid skeleton demonstrations from video data, developed a preprocessing pipeline for motion capture data. We hope to refine our system in the future to learn from motion capture data and directly from videos of human walking. Our system is a work-in-progress, which is the foundation for several possible future research projects.
+    <p>
+    <div class="l-middle-outset">
+    <p>
+        <object data="architecture.svg" alt="Architecture diagram" style='height: 100%; width: 100%; object-fit: contain' type="image/svg+xml">
+  <img src="architecture.svg" />
+</object>
+      
+      <div class="l-body" style="font-family:Georgia">
+      <small>Architecture diagram of our GAIL imitation learning system, accepting input from three different types of sources with increasing complexity: a reinforcement learned (RL) expert, motion capture data, and real-life video. $\pi = \pi_g$.</small>
+      </p>
+      </div>
+    </div>
+    </p>
+    <h2 style="text-align:justify">This post describes our experience implementing a system which learns locomotion skills for humanoid skeletons from imitation, and all of the supporting infrastructure and data processing necessary to do so. Our system employs a generative adversarial imitation learning (GAIL) architecture, which is a type of generative adversarial network. We successfully trained our GAIL to control a custom-designed humanoid skeleton, using expert demonstrations from a reinforment-learned (RL) policy learned using that skeleton. We also explored several methods for deriving real human motion demonstrations from video and developed a preprocessing pipeline for motion capture data. Our system is work-in-progress, making it the foundation for several possible future research projects.
     </h2>
     <dt-byline></dt-byline>
     <h2>Introduction to GAIL</h2>
@@ -41,35 +54,23 @@ dt-banner {
       $$\min_{\theta} \mathrm{E}_{s,a \sim p(s,a)}[L(D_{\theta}(s,a), 1)] + \mathrm{E}_{z \sim q(z)}[L(D_{\theta}(G_{\phi}(z)), 0)]$$ $$\max_{\phi} \mathrm{E}_{z \sim q(z)}[L(D_{\theta}(G_{\phi}(z)), 0)]$$
     </p>-->
     <p>
-        Generative adversarial imitation learning (GAIL) is a deep neural network architecture for imitation learning, wherein an agent ("learner") learns a skill by observing the behavior of another agent ("expert"). It is based on the popular generative adversarial network (GAN) architecture, in which the network is divided into two principal functional blocks engaged in an adversarial game: the "discriminator" (or "critic") learns to distinguish real training examples from examples created by the network, while the "generator" (or "actor") block learns to produce convincing counterfeits of real examples meant to fool the discriminator. Those counterfeits are also the useful output of a well-trained network.
+        Generative adversarial imitation learning (GAIL) is a deep neural network architecture for imitation learning, wherein an agent ("learner") learns a skill by observing the behavior of another agent ("expert"). It is based on the popular generative adversarial network (GAN) architecture, in which the network is divided into two principal functional blocks engaged in an adversarial game: the "discriminator" (or "critic") learns to distinguish real training examples from examples created by the network, while the "generator" (or "actor") module learns to produce convincing trajectories meant to fool the discriminator.
     </p>
     <p>
-        A key fact for applying GANs to imitation learning is that the generator is never exposed to real world training examples, only the discriminator. In GAIL, the discriminator learns to distinguish generated performances from expert demonstrations, while the generator attempts to mimic the expert convincingly-enough to fool the discriminator into thinking its performance was an expert demonstration. In our use of GAIL, the expert demonstrations are time-series humanoid motion traces from a variety of sources (motion capture, video, artificially-trained simulations), and the output of the generator is a policy $\pi_g$ (a function mapping from states $s$ to actions $a$) for moving a humanoid model in simulation to mimic those demonstrated motions.
+        A key fact for applying GANs to imitation learning is that the generator is never exposed to real world training examples, only the discriminator. In GAIL, the discriminator learns to distinguish generated performances from expert demonstrations, while the generator attempts to mimic the expert convincingly-enough to fool the discriminator into thinking its performance was an expert demonstration. In our setting of GAIL, the expert demonstrations are time-series humanoid locomotion trajectories from a variety of sources (motion capture, video, artificially-trained experts via RL), and the output of the generator is a policy $\pi_g$ (a function mapping from states $s$ to actions $a$) for moving a humanoid model in simulation to mimic those demonstrated motions.
     </p>
     <hr>
     <h2>Our GAIL Implementation</h2>
     <p>
         The original GAIL formulation introduced by Ho et al.
-        <dt-cite key="GAIL"></dt-cite> proposes that expert demonstrations containing both states $s$ and corresponding actions $a$ are presented to the discriminator. In a real life imitation learning problem, such as humanoid motion, the actions (e.g. joint torques) are difficult to obtain compared to states (e.g. joint positions). Our work attempts to address this and other practical problems in using GAIL for imitation learning outside simulated environments. An architectural overview of how our implemented system is constructed, and what it is capable of, is shown below.
+        <dt-cite key="GAIL"></dt-cite> proposes a method where expert demonstrations containing both states $s$ and corresponding actions $a$ are presented to the discriminator. In a real-life imitation learning problem, such as humanoid motion, the actions (e.g. joint torques) are difficult to obtain compared to states (e.g. joint positions) as it would require solving complex inverse kinematics problems. Our work attempts to address this and other practical settings in using GAIL for imitation learning outside simulated environments. An architectural overview of how our implemented system is constructed, and what it is capable of, is shown below.
     </p>
     <p>
-    <div class="l-middle-outset">
-    <p>
-        <object data="architecture.svg" alt="Architecture diagram" style='height: 100%; width: 100%; object-fit: contain' type="image/svg+xml">
-  <img src="architecture.svg" />
-</object>
-      <div class="l-body" style="font-family:Georgia">
-      <small>Architecture diagram for our GAIL imitation learning system, accepting input from three different types of sources with increasing complexity: a reinforcement learned (RL) expert, motion capture data, and real-life video. $\pi = \pi_g$.</small>
-      </p>
-      </div>
-    </div>
-    </p>
-    <p>
-        In the canonical GAN formulation there are two loss functions that can be both optimized by regular gradient descent algorithms, separately. One loss function for the discriminator and one for the generator. In GAIL, however, the generator network $G_\theta$ encodes a policy $\pi_g$ and cannot be trained with simple gradient descent. We use a policy gradient method to train the generator, though there are also non-gradient methods explored in the literature. Based on the rollouts $\{z^g_t\}_{t=1\dots T^g}$ of $\pi_g$, and the rewards $\{r_t\}_{t=1\dots T^g}$ associated with each $z^g_t$ that are calculated by the discriminator, the policy gradient method updates $\theta$, the parameters representing the policy function. Also contrary to typical GAN practice, the reward input to policy gradient, as calculated by the discriminator, is found in the literature to yield better results when presented as $r_t = -\log(1 - D_\phi(\cdot))$ as opposed to $\log(D_\phi(\cdot))$
+        In the canonical GAN formulation there are two loss functions that can be both optimized by regular gradient descent algorithms, separately: One loss function for the discriminator and one for the generator. In GAIL, however, the generator network $G_\theta$ encodes a policy $\pi_g$ and cannot be trained with simple gradient descent. We use a policy gradient method to train the generator, though there are also non-gradient methods explored in the literature. Based on the rollouts $\{z^g_t\}_{t=1\dots T^g}$ of $\pi_g$, and the rewards $\{r_t\}_{t=1\dots T^g}$ associated with each $z^g_t$ that are calculated by the discriminator, the policy gradient method updates $\theta$, the parameters representing the policy function. Also contrary to typical GAN practice, the reward input to policy gradient, as calculated by the discriminator, is found in the literature to yield better results when presented as $r_t = -\log(1 - D_\phi(\cdot))$ as opposed to $\log(D_\phi(\cdot))$
         <dt-cite key="DeepMindGAIL"></dt-cite>. The loss function to be optimized for the discriminator $D_\phi$ is much like in a regular GAN: $$\mathscr{L}(\phi) = \Sigma_{t=1\dots T^g} \log(1 - D_\phi(z^g_t)) - \Sigma_{t=1\dots T^d} \log(D_\phi(z^d_t))$$ After the generator's parameters $\theta$ are updated, the discriminator's parameters $\phi$ are updated $M$ times. Algorithm 1 gives pseudocode of the GAIL policy training.
     </p>
     <p>
-        <div style="white-space: pre; font-family: Georgia, serif; border-left:5px solid #ccc; padding: -6px -6px"> <b>Algorithm 1</b>
+        <div style="white-space: pre; font-family: Georgia, serif; border-left:5px solid #ccc; padding-left: 16px"> <b>Algorithm 1</b>
             <b>Input:</b>
               set of demonstrations $\{z^d_t\}_{t=1\dots T^d}$ Initialize $\pi_g$ and $D_\phi$ randomly
             <b>for</b> $i$ in $1 \dots N$ <b>do</b>
@@ -94,30 +95,38 @@ dt-banner {
             </li>
         </ul>
         <p>
-            Our original ambition was to use Roboschool exclusively for our target humanoid environment. However, we found that our implementation of TRPO, based on Open AI Baselines, is highly-tuned for MuJoCo and failed to train in Roboschool environments. All experiments detailed herein used MuJoCo as the simulation environment.
+            Our original ambition was to use Roboschool exclusively for our target humanoid environment. However, we found that our implementation of TRPO, based on Open AI Baselines, is highly tuned for MuJoCo and failed to train successful locomotion policies in Roboschool environments. All experiments detailed herein used MuJoCo as the simulation environment.
         </p>
         <p>
-            We engineered a custom MuJoCo humanoid skeleton in an attempt to approximate of a real human body in terms of relative length and weight of the joints. The skeleton used both is shown in the figure below.
+            We engineered a custom MuJoCo humanoid skeleton in an attempt to approximate a real human body in terms of relative length and weight of the joints. The final skeleton is shown below.
         </p>
             <div class="l-body-outset">
                 <img class="l-body-outset" src="images/skeleton.png">
             </div>
         <p>
-            Note that this skeleton is not the same as the real skeletons in the motion capture and real-life video data, and so our implementation performs <i>imitation</i> as well as <i>retargeting</i>. The imitation learning evaluation and rollout is based solely on the five 3D vector positions (relative to the pelvis) of the feet, hands, and head. The generated policy $\pi_g$ takes actions on all 21 joints.
+            Note that this skeleton is not the same as the real skeletons in the motion capture and real-life video data. Therefore, our implementation performs <i>imitation</i> as well as <i>retargeting</i>. The imitation learning evaluation and rollout is based solely on the following features $z_t$, based on the states $\{s_t\}_{t=1\dots T}$:
+
+            <ul>
+                <li>Five normalized 3D vector positions (relative to the pelvis) of the feet, hands, and head</li>
+                <li>Change in pelvis position averaged over the last $k$ time steps (where $k$ is set to 10 in our setting).</li>
+            </ul>
+            <p>
+            The generated policy $\pi_g$ takes actions on all 21 joints.
+            </p>
         </p>
         <h2>Motion Capture Extraction and Resampling</h2>
         <p>
-          The CMU motion capture dataset provides AMC files which contain the joint angle definitions for various motions (e.g. walking, dancing, etc.) of the full humanoid skeleton at a frequency of 120Hz. We created an automated tool to intepret the AMC files, down-sample data to the same frame rate as our simulator, and generate the rollouts from motion capture data. For this project we down-sampled the animation to a frequency of approximately 33.33Hz using cubic spline interpolation.
+          The CMU motion capture dataset provides AMC files which contain the joint angle definitions for various motions (e.g. walking, dancing, etc.) of the full humanoid skeleton at a frequency of 120Hz. We created an automated tool to intepret the AMC files, down-sample data to the same frame rate as our simulator, and generate the rollouts from motion capture data. For this project we down-sampled the animation to a frequency of approximately 66.67Hz using cubic spline interpolation.
         </p>
         <hr>
         <h2>Generator Policy Network $\pi_g$</h2>
         <p>
-            Our final policy network consists of a 3 layer network with neuron widths of (150, 150, 150). We also experimented with dual layer networks of hidden shape (32, 32) and (64, 64), but found the larger network necessary for reliable performance. We found that the size of the network necessary for adequate performance scales proportionally with the degrees of freedom present in the target skeleton. Unfortunately, larger networks also slowed training significantly.
+            Our final policy network consists of 3 hidden layers &agrave; 150 neurons. We also experimented with dual-layer networks of hidden shapes (32, 32) and (64, 64), but found the larger network necessary for reliable performance. We found that the size of the network necessary for adequate performance scales proportionally with the degrees of freedom present in the target skeleton. Unfortunately, larger networks also slowed training significantly.
         </p>
         <hr>
         <h2>Demonstrator Policy $\pi_d$</h2>
         <p>
-            The expert skill can be any movement of the human body. Such a skill can be represented as a rollout (series of states $\{s_1, s_2, \ldots,s_n\}$ at discrete timesteps $\{t_1, t_2, \ldots, t_n\}$) generated from the implicit expert policy $\pi_d$, which is a function mapping the state of the expert $s$ to its next action from that state $a$. We attempted to train the system from three sources of expert demonstrations, presented in order of increasing complexity.
+            The expert skill can be any movement of the human body, such as walking or running. Such a skill can be represented as a rollout (series of states $\{s_1, s_2, \ldots,s_n\}$ at discrete timesteps $\{t_1, t_2, \ldots, t_n\}$) generated from the implicit expert policy $\pi_d$, which is a function mapping the state of the expert $s$ to its next action from that state $a$. We attempted to train the system from three sources of expert demonstrations, presented in order of increasing complexity.
             <ol>
                 <li>Reinforcement Learned Policy</li>
                 <li>Motion Capture Data</li>
@@ -125,11 +134,11 @@ dt-banner {
             </ol>
         </p>
         <p>
-            These three different rollout sources give rise to important complications and training from each has their own challenges, which we discuss in detail below.
+            These three different demonstration sources give rise to important complications, and training from each has their own challenges, which we discuss in detail below.
         </p>
         <h3>Learning from Artificial Experts (RL)</h3>
         <p>
-            The simplest way of testing a GAIL is to imitate a policy obtained through direct <i>Reinforcement Learning (RL)</i>, in which the agent learns to perform skills in an environment based on a given reward function by attempting to maximize a reward function. This method is employed in the original GAIL paper of Ho et al.
+            The simplest way of testing GAIL is to imitate a policy obtained through direct <i>Reinforcement Learning (RL)</i>, which is solved by a Markov Decision Process (MDP) in which an agent takes actions in the environment to maximize a cumulative reward. Learning from RL experts is employed in the original GAIL paper of Ho et al.
             <dt-cite key="GAIL"></dt-cite>. Note that an RL policy provides both states and actions, but actions are difficult to observe in the real world. The results of our Trust Region Policy Optimization (TRPO) RL policy and its learned GAIL policy are shown in the video below.
         </p>
         <p>
@@ -140,22 +149,22 @@ dt-banner {
         </p>
         <h3>Learning from Motion Capture Data</h3>
         <p>
-            A setting much closer to reality is to imitate motion capture data. Here the input rollout source does not provide any actions nor rewards. Motion capture data is obtained by attaching trackable markers to actors, who then perform recorded skill demonstrations inside a special tracking system. The CMU Graphics Lab's Motion Capture Database (MOCAP) provides several skills such as walking and jumping
-            <dt-cite key="MOCAP"></dt-cite>. As this data only provides states, we adapted the GAIL to function without expert actions available, as in Merel et al.
-            <dt-cite key="DeepMindGAIL"></dt-cite>.
+            A setting much closer to reality is to imitate motion capture data. Here, the demonstrator does not provide any actions nor rewards. Motion capture data is obtained by attaching trackable markers to human actors, who perform recorded skill demonstrations in front of a special tracking system. The CMU Graphics Lab's Motion Capture Database (MOCAP) provides several skills, such as walking and jumping
+            <dt-cite key="MOCAP"></dt-cite>. As this data only provides states, we adapted GAIL to function without expert actions available, as in Merel et al.
+            <dt-cite key="DeepMindGAIL"></dt-cite>, also referred to as S-GAIL <dt-cite key="Bailey2016"></dt-cite>.
         </p>
         <h3>Learning from Video</h3>
         <p>
-            Learning from motion capture data requires putting markers on actors who demonstrate various skills, and asking them for perform in an expensive tracking system. We would like to instead learn skills directly from video. The first step to achieve this, within our existing GAIL framework, is generate rollouts of three dimensional human poses while performing a skill. Most approaches of obtaining a three-dimensional pose from raw images belongs to one of two categories:
+            Learning from motion capture data requires putting markers on actors who demonstrate various skills, and asking them for perform in an expensive tracking system. Instead we would rather like to learn skills directly from video. The first step to achieve this, within our existing GAIL framework, is generate rollouts of three dimensional human poses while performing a skill. Most approaches of obtaining a three-dimensional pose from raw images belong to one of two categories:
         </p>
         <ol>
-            <li>Using a pipeline approach, where first a 2D pose is estimated from an image. Followed by an estimation of the 3D pose from the generated 2D pose.</li>
-            <li>Learning 3D poses directly from images.</li>
+            <li>A pipeline approach, where first a 2D pose is estimated from an image, followed by the estimation of the 3D pose.</li>
+            <li>Learning 3D poses directly from images in an end-to-end fashion.</li>
         </ol>
         <p>
             We first tried the pipeline approach using a model trained for 2D pose estimation
-            <dt-cite key="cao2017realtime"></dt-cite>, and fed the output of that model to one which estimates 3D pose from 2D pose
-            <dt-cite key="martinez_2017_3dbaseline"></dt-cite>. We were able to achieve good results for 2D pose estimation, but 3D pose estimation suffered from restricted movement for skills like walking. The brittleness of connecting two imperfect models taught us why end-to-end approaches are increasingly popular for reconstruction problems like this one.
+            <dt-cite key="cao2017realtime"></dt-cite>, and fed the output of to another module which estimates the 3D pose from the 2D pose
+            <dt-cite key="martinez_2017_3dbaseline"></dt-cite>. We were able to achieve good results for 2D pose estimation, but 3D pose estimation suffered from restricted movement for skills like walking. The brittleness of connecting two imperfect models taught us why end-to-end approaches are increasingly popular for such reconstruction problems.
         </p>
         <p>
             <video width="100%" controls autoplay loop>
@@ -165,10 +174,10 @@ dt-banner {
         </p>
         <p>
             Next, we experimented with methods which directly learn 3D poses from images using a probabilistic 3D human pose model. This overcomes the limitation of the pipeline approach by backpropagating 3D information about the skeletal structure to the 2D convolutional layers. In this way, the prediction of 2D pose benefits from the 3D information encoded
-            <dt-cite key="Tome_2017_CVPR"></dt-cite>. This approach works in two stages. Firstly, belief maps obtained from the previous stage $t−1$ are used to predict an updated set of belief maps for the 2D human joint positions. Secondly, the output of the CNN based belief maps is taken as input to a new layer that uses a pretrained probabilistic 3D human pose model to lift the proposed 2D poses into 3D. This approach gave us better 3D pose estimations.
+            <dt-cite key="Tome_2017_CVPR"></dt-cite>. This approach works in two stages. First, belief maps obtained from the previous stage are used to predict an updated set of belief maps for the 2D human joint positions. Second, the output of the CNN-based belief maps is taken as input to a new layer that uses a pretrained probabilistic 3D human pose model to lift the proposed 2D poses into 3D. This approach gave us 3D pose estimations of significantly higher quality.
         </p>
         <p>
-            We then extend this approach from images to videos. This is done by first obtaining frames from a rollout for a given skill like walking, running etc. The results for this approach can be seen below:
+            We then extended this approach from images to videos. The results for this approach can be seen below:
         </p>
         <p>
             <video width="100%" controls autoplay loop>
@@ -179,17 +188,17 @@ dt-banner {
         <hr>
         <h2>Achievements</h2>
         <p>
-          We implemented a deep RL development environment and tools for doing our research. We also trained expert RL policies, train GAIL policies from those experts, and attempted (unsuccessfully, so far) to train GAIL policies from motion capture and video. We also implemented two approaches for human pose reconstruction from video, using three pretrained networks from the literature. We hope plan on continuing this research in the future.
+          We implemented a deep RL development environment and tools for doing our research. We also trained expert RL policies, and trained GAIL policies from those experts. We also implemented two approaches for human pose reconstruction from video, using three pretrained networks from the literature. We plan on continuing this research in the future. The following tasks have been accomplished:
           <ul>
-            <li>Implemented deep RL training environment using Docker, with support for GPUs, OpenGL visualization, TensorFlow, MuJoCo, Roboschool, Jupyter Notebook, and many other tools. The environment runs on Windows, Mac, and Linux and is easy to use with cloud computing providers.</li>
+            <li>Implemented deep RL training environment using Docker, with support for GPUs, OpenGL visualization, TensorFlow, MuJoCo, Roboschool, Jupyter Notebook, and many other tools. The environment runs on Mac and Linux and is easy to use with cloud computing providers.</li>
             <li>Learned how to use Google Cloud to train on many CPUs at once</li>
-            <li>Created custom instrumented humanoid skeleton and training environment in MuJoCo and Roboschool</li>
-            <li>Implemented motion capture data interpreter and time-series resampling pipeline</li>
+            <li>Created custom humanoid skeletons and training environments in MuJoCo and Roboschool</li>
+            <li>Implemented motion capture data interpreter (for ASF and AMC files) and time-series resampling pipeline</li>
             <li>Trained humanoid walking policies on a custom skeleton using TRPO</li>
-            <li>Trained GAIL walking policies using TRPO-based expert</li>
-            <li>Implemented humanoid policy rollout visualizer with feature overlays</li>
+            <li>Trained GAIL walking policies from a TRPO-based expert</li>
+            <li>Implemented a <a href="http://eric-heiden.com/mocap-visualizer">humanoid policy rollout visualizer</a> with feature overlays in JavaScript</li>
             <li>Collected human walking video demonstrations</li>
-            <li>Experimented with video→2D pose→3D pose pipeline approach for human pose estimation from video, using two pretrained networks from the literature</li>
+            <li>Experimented with video → 2D pose → 3D pose pipeline approach for human pose estimation from video, using two pretrained networks from the literature</li>
             <li>Experimented with end-to-end video→3D approach for human pose estimation from video, using a pretrained network from the literature</li>
             <li>Experimented with GAIL target humanoid, policy network shape, and rollout feature representations to attain a stable GAIL using RL policy as expert</li>
           </ul>
@@ -201,13 +210,13 @@ dt-banner {
             <li>GAIL, like all GANs, tends to be very unstable and hard to train</li>
             <li>Ingesting outside data sources required a substantial amount of work in interpreting and preprocessing the data</li>
             <li>Pipeline approaches are simpler to understand and train, but every step in the pipeline creates a failure mode. End-to-end approaches allow the learner to backpropagate failures through the pipeline to compensate, and can be more robust.
-            <li>The formulation of GAIL for humanoids from Merel et al. <dt-cite key="DeepMindGAIL"></dt-cite> is very brittle to the target humanoid and the feature representation chosen for rollouts<. This is an opportunity for future work.</li>
-            <li>Training deep RL policies with high-dimensional agents like humanoids requires very large amounts of CPU-based computing</li>
+            <li>The formulation of GAIL for humanoids from Merel et al. <dt-cite key="DeepMindGAIL"></dt-cite> is very brittle to the target humanoid and the feature representation chosen for rollouts. This is an opportunity for future work.</li>
+            <li>Training deep RL policies with high-dimensional agents like humanoids requires very large amounts of CPU-based computing.</li>
           </ul>
         </p>
         <h2>Conclusion and future work</h2>
         <p>
-            Our goals in this project was to familiarize ourselves with state-of-the-art deep RL software and research techniques, while reimplementing previous work and laying a foundation for future research. While we did not successfully reimplement the results from <dt-cite key="DeepMindGAIL"></dt-cite>, we certainly achieved our two other goals. We now have a deep RL training environment and workflow, and several future research directions we hope to pursue and publish in peer-reviewed forums.
+            Our goal in this project was to familiarize ourselves with state-of-the-art deep RL software and research techniques, while reimplementing previous work and laying a foundation for future research. While we did not exactly reimplement the results from <dt-cite key="DeepMindGAIL"></dt-cite>, we certainly achieved our two other goals. We now have a deep RL training environment and workflow, as well as several future research directions we hope to pursue and publish in peer-reviewed forums.
         </p>
         <p>
             Possible directions include:
@@ -215,13 +224,13 @@ dt-banner {
               <li>One-shot imitation learning from video using a GAIL network pretrained from a simulated expert</li>
               <li>Learning feature representations for the expert demonstrations to avoid feature engineering for each new target morphology</li>
               <li>Exploring architectures and roll-out representations (e.g. Fourier coefficients, etc.) which are more effective for time-domain motion data</li>
-              <li>Using GAIL as the foundation for a multi-task imitation learner</li>
+              <li>Using GAIL as the foundation for a multi-task imitation learning</li>
             </ul>
         </p>
         <hr>
         <h2>Acknowledgements</h2>
         <p>
-            We would like to express our appreciation to <a href="https://andrewliao11.github.io/">Andrew Liao</a> for providing the TensorFlow-based GAIL implementation used in this research. We would also like to thank our TAs Aartem Molchanov and Shao-Hua Sun, and Prof. Joseph Lim for their guidance and support. The motion capture data used in this research was obtained from <a href="http://mocap.cs.cmu.edu">mocap.cs.cmu.edu</a>. The database was created with funding from NSF EIA-0196217.
+            We would like to express our appreciation to <a href="https://andrewliao11.github.io/">Andrew Liao</a> for providing the TensorFlow-based GAIL implementation used in this research. We would also like to thank our TAs Artem Molchanov and Shao-Hua Sun, and Prof. Joseph Lim for their guidance and support. The motion capture data used in this research was obtained from <a href="http://mocap.cs.cmu.edu">mocap.cs.cmu.edu</a>. The database was created with funding from NSF EIA-0196217.
         </p>
 </dt-article>
 <dt-appendix class="centered">
