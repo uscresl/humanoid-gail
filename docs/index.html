@@ -33,7 +33,8 @@ dt-banner {
 </script>
 <dt-article class="centered" style="text-align:justify">
     <h1>Humanoid Imitation Learning from Video</h1>
-    <h2 style="text-align:justify">We engineered a system which learns movement skills for humanoid figures from imitation. The system employs a Generative Adversarial Imitation Learning (GAIL) architecture, and is able to learn directly from videos of human walking, without an explicity-defined reward function.</h2>
+    <h2 style="text-align:justify">This post describes our experience implementing a system which learns movement skills for humanoid figures from imitation, and all of the supporting infrastructure and data processing necessary to do so. Our system employs a generative adversarial imitation learning (GAIL) architecture, which is a type of generative adversarial network. We successfully trained our GAIL to control a custom-designed humanoid skeleton, using expert demonstrations from an RL policy learned using that skeleton. We also explored several methods for deriving humanoid skeleton demonstrations from video data, developed a preprocessing pipeline for motion capture data. We hope to refine our system in the future to learn from motion capture data and directly from videos of human walking. Our system is a work-in-progress, which is the foundation for several possible future research projects.
+    </h2>
     <dt-byline></dt-byline>
     <h2>Introduction to GAIL</h2>
     <p>
@@ -172,7 +173,7 @@ dt-banner {
         <p>
           We implemented a deep RL development environment and tools for doing our research. We also trained expert RL policies, train GAIL policies from those experts, and attempted (unsuccessfully, so far) to train GAIL policies from motion capture and video. We also implemented two approaches for human pose reconstruction from video, using three pretrained networks from the literature. We hope plan on continuing this research in the future.
           <ul>
-            <li>Implemented deep RL training environment, with support for GPUs, OpenGL visualization, TensorFlow, MuJoCo, Roboschool, Jupyter Notebook, and many other tools</li>
+            <li>Implemented deep RL training environment using Docker, with support for GPUs, OpenGL visualization, TensorFlow, MuJoCo, Roboschool, Jupyter Notebook, and many other tools. The environment runs on Windows, Mac, and Linux and is easy to use with cloud computing providers.</li>
             <li>Learned how to use Google Cloud to train on many CPUs at once</li>
             <li>Created custom instrumented humanoid skeleton and training environment in MuJoCo and Roboschool</li>
             <li>Implemented motion capture data interpreter and time-series resampling pipeline</li>
