@@ -126,7 +126,7 @@ dt-banner {
         <hr>
         <h2>Demonstrator Policy $\pi_d$</h2>
         <p>
-            The expert skill can be any movement of the human body. Such a skill can be represented as a rollout (series of states $\{s_1, s_2, \ldots,s_n\}$ at discrete timesteps $\{t_1, t_2, \ldots, t_n\}$) generated from the implicit expert policy $\pi_d$, which is a function mapping the state of the expert $s$ to its next action from that state $a$. We attempted to train the system from three sources of expert demonstrations, presented in order of increasing complexity.
+            The expert skill can be any movement of the human body, such as walking or running. Such a skill can be represented as a rollout (series of states $\{s_1, s_2, \ldots,s_n\}$ at discrete timesteps $\{t_1, t_2, \ldots, t_n\}$) generated from the implicit expert policy $\pi_d$, which is a function mapping the state of the expert $s$ to its next action from that state $a$. We attempted to train the system from three sources of expert demonstrations, presented in order of increasing complexity.
             <ol>
                 <li>Reinforcement Learned Policy</li>
                 <li>Motion Capture Data</li>
@@ -134,11 +134,11 @@ dt-banner {
             </ol>
         </p>
         <p>
-            These three different rollout sources give rise to important complications and training from each has their own challenges, which we discuss in detail below.
+            These three different demonstration sources give rise to important complications, and training from each has their own challenges, which we discuss in detail below.
         </p>
         <h3>Learning from Artificial Experts (RL)</h3>
         <p>
-            The simplest way of testing a GAIL is to imitate a policy obtained through direct <i>Reinforcement Learning (RL)</i>, in which the agent learns to perform skills in an environment based on a given reward function by attempting to maximize a reward function. This method is employed in the original GAIL paper of Ho et al.
+            The simplest way of testing GAIL is to imitate a policy obtained through direct <i>Reinforcement Learning (RL)</i>, which is solved by a Markov Decision Process (MDP) in which an agent takes actions in the environment to maximize a cumulative reward. Learning from RL experts is employed in the original GAIL paper of Ho et al.
             <dt-cite key="GAIL"></dt-cite>. Note that an RL policy provides both states and actions, but actions are difficult to observe in the real world. The results of our Trust Region Policy Optimization (TRPO) RL policy and its learned GAIL policy are shown in the video below.
         </p>
         <p>
@@ -149,22 +149,22 @@ dt-banner {
         </p>
         <h3>Learning from Motion Capture Data</h3>
         <p>
-            A setting much closer to reality is to imitate motion capture data. Here the input rollout source does not provide any actions nor rewards. Motion capture data is obtained by attaching trackable markers to actors, who then perform recorded skill demonstrations inside a special tracking system. The CMU Graphics Lab's Motion Capture Database (MOCAP) provides several skills such as walking and jumping
-            <dt-cite key="MOCAP"></dt-cite>. As this data only provides states, we adapted the GAIL to function without expert actions available, as in Merel et al.
-            <dt-cite key="DeepMindGAIL"></dt-cite>.
+            A setting much closer to reality is to imitate motion capture data. Here, the demonstrator does not provide any actions nor rewards. Motion capture data is obtained by attaching trackable markers to human actors, who perform recorded skill demonstrations in front of a special tracking system. The CMU Graphics Lab's Motion Capture Database (MOCAP) provides several skills, such as walking and jumping
+            <dt-cite key="MOCAP"></dt-cite>. As this data only provides states, we adapted GAIL to function without expert actions available, as in Merel et al.
+            <dt-cite key="DeepMindGAIL"></dt-cite>, also referred to as S-GAIL <dt-cite key="Bailey2016"></dt-cite>.
         </p>
         <h3>Learning from Video</h3>
         <p>
-            Learning from motion capture data requires putting markers on actors who demonstrate various skills, and asking them for perform in an expensive tracking system. Instead we would rather like to learn skills directly from video. The first step to achieve this, within our existing GAIL framework, is generate rollouts of three dimensional human poses while performing a skill. Most approaches of obtaining a three-dimensional pose from raw images belongs to one of two categories:
+            Learning from motion capture data requires putting markers on actors who demonstrate various skills, and asking them for perform in an expensive tracking system. Instead we would rather like to learn skills directly from video. The first step to achieve this, within our existing GAIL framework, is generate rollouts of three dimensional human poses while performing a skill. Most approaches of obtaining a three-dimensional pose from raw images belong to one of two categories:
         </p>
         <ol>
-            <li>Using a pipeline approach, where first a 2D pose is estimated from an image. Followed by an estimation of the 3D pose from the generated 2D pose.</li>
-            <li>Learning 3D poses directly from images.</li>
+            <li>A pipeline approach, where first a 2D pose is estimated from an image, followed by the estimation of the 3D pose.</li>
+            <li>Learning 3D poses directly from images in an end-to-end fashion.</li>
         </ol>
         <p>
             We first tried the pipeline approach using a model trained for 2D pose estimation
-            <dt-cite key="cao2017realtime"></dt-cite>, and fed the output of that model to one which estimates 3D pose from 2D pose
-            <dt-cite key="martinez_2017_3dbaseline"></dt-cite>. We were able to achieve good results for 2D pose estimation, but 3D pose estimation suffered from restricted movement for skills like walking. The brittleness of connecting two imperfect models taught us why end-to-end approaches are increasingly popular for reconstruction problems like this one.
+            <dt-cite key="cao2017realtime"></dt-cite>, and fed the output of to another module which estimates the 3D pose from the 2D pose
+            <dt-cite key="martinez_2017_3dbaseline"></dt-cite>. We were able to achieve good results for 2D pose estimation, but 3D pose estimation suffered from restricted movement for skills like walking. The brittleness of connecting two imperfect models taught us why end-to-end approaches are increasingly popular for such reconstruction problems.
         </p>
         <p>
             <video width="100%" controls autoplay loop>
@@ -174,10 +174,10 @@ dt-banner {
         </p>
         <p>
             Next, we experimented with methods which directly learn 3D poses from images using a probabilistic 3D human pose model. This overcomes the limitation of the pipeline approach by backpropagating 3D information about the skeletal structure to the 2D convolutional layers. In this way, the prediction of 2D pose benefits from the 3D information encoded
-            <dt-cite key="Tome_2017_CVPR"></dt-cite>. This approach works in two stages. Firstly, belief maps obtained from the previous stage $t−1$ are used to predict an updated set of belief maps for the 2D human joint positions. Secondly, the output of the CNN based belief maps is taken as input to a new layer that uses a pretrained probabilistic 3D human pose model to lift the proposed 2D poses into 3D. This approach gave us better 3D pose estimations.
+            <dt-cite key="Tome_2017_CVPR"></dt-cite>. This approach works in two stages. First, belief maps obtained from the previous stage are used to predict an updated set of belief maps for the 2D human joint positions. Second, the output of the CNN-based belief maps is taken as input to a new layer that uses a pretrained probabilistic 3D human pose model to lift the proposed 2D poses into 3D. This approach gave us 3D pose estimations of significantly higher quality.
         </p>
         <p>
-            We then extend this approach from images to videos. This is done by first obtaining frames from a rollout for a given skill like walking, running etc. The results for this approach can be seen below:
+            We then extended this approach from images to videos. The results for this approach can be seen below:
         </p>
         <p>
             <video width="100%" controls autoplay loop>
