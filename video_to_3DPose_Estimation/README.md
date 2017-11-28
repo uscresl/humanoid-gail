@@ -1,3 +1,5 @@
+# 3D pose estimation of human figures from videos
+
 ## Dependencies
 
 The code is compatible with python2.7
