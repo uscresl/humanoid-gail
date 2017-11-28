@@ -33,6 +33,19 @@ dt-banner {
 </script>
 <dt-article class="centered" style="text-align:justify">
     <h1>Humanoid Imitation Learning from Video</h1>
+    <p>
+    <div class="l-middle-outset">
+    <p>
+        <object data="architecture.svg" alt="Architecture diagram" style='height: 100%; width: 100%; object-fit: contain' type="image/svg+xml">
+  <img src="architecture.svg" />
+</object>
+      
+      <div class="l-body" style="font-family:Georgia">
+      <small>Architecture diagram of our GAIL imitation learning system, accepting input from three different types of sources with increasing complexity: a reinforcement learned (RL) expert, motion capture data, and real-life video. $\pi = \pi_g$.</small>
+      </p>
+      </div>
+    </div>
+    </p>
     <h2 style="text-align:justify">This post describes our experience implementing a system which learns movement skills for humanoid figures from imitation, and all of the supporting infrastructure and data processing necessary to do so. Our system employs a generative adversarial imitation learning (GAIL) architecture, which is a type of generative adversarial network. We successfully trained our GAIL to control a custom-designed humanoid skeleton, using expert demonstrations from an RL policy learned using that skeleton. We also explored several methods for deriving humanoid skeleton demonstrations from video data, developed a preprocessing pipeline for motion capture data. We hope to refine our system in the future to learn from motion capture data and directly from videos of human walking. Our system is a work-in-progress, which is the foundation for several possible future research projects.
     </h2>
     <dt-byline></dt-byline>
@@ -50,20 +63,7 @@ dt-banner {
     <h2>Our GAIL Implementation</h2>
     <p>
         The original GAIL formulation introduced by Ho et al.
-        <dt-cite key="GAIL"></dt-cite> proposes that expert demonstrations containing both states $s$ and corresponding actions $a$ are presented to the discriminator. In a real life imitation learning problem, such as humanoid motion, the actions (e.g. joint torques) are difficult to obtain compared to states (e.g. joint positions). Our work attempts to address this and other practical problems in using GAIL for imitation learning outside simulated environments. An architectural overview of how our implemented system is constructed, and what it is capable of, is shown below.
-    </p>
-    <p>
-    <div class="l-middle-outset">
-    <p>
-        <object data="architecture.svg" alt="Architecture diagram" style='height: 100%; width: 100%; object-fit: contain' type="image/svg+xml">
-  <img src="architecture.svg" />
-</object>
-      
-      <div class="l-body" style="font-family:Georgia">
-      <small>Architecture diagram for our GAIL imitation learning system, accepting input from three different types of sources with increasing complexity: a reinforcement learned (RL) expert, motion capture data, and real-life video. $\pi = \pi_g$.</small>
-      </p>
-      </div>
-    </div>
+        <dt-cite key="GAIL"></dt-cite> proposes that expert demonstrations containing both states $s$ and corresponding actions $a$ are presented to the discriminator. In a real life imitation learning problem, such as humanoid motion, the actions (e.g. joint torques) are difficult to obtain compared to states (e.g. joint positions). Our work attempts to address this and other practical problems in using GAIL for imitation learning outside simulated environments. An architectural overview of how our implemented system is constructed, and what it is capable of, is shown on the top of this page.
     </p>
     <p>
         In the canonical GAN formulation there are two loss functions that can be both optimized by regular gradient descent algorithms, separately. One loss function for the discriminator and one for the generator. In GAIL, however, the generator network $G_\theta$ encodes a policy $\pi_g$ and cannot be trained with simple gradient descent. We use a policy gradient method to train the generator, though there are also non-gradient methods explored in the literature. Based on the rollouts $\{z^g_t\}_{t=1\dots T^g}$ of $\pi_g$, and the rewards $\{r_t\}_{t=1\dots T^g}$ associated with each $z^g_t$ that are calculated by the discriminator, the policy gradient method updates $\theta$, the parameters representing the policy function. Also contrary to typical GAN practice, the reward input to policy gradient, as calculated by the discriminator, is found in the literature to yield better results when presented as $r_t = -\log(1 - D_\phi(\cdot))$ as opposed to $\log(D_\phi(\cdot))$
