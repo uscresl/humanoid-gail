@@ -105,11 +105,14 @@ dt-banner {
             </div>
         <p>
             Note that this skeleton is not the same as the real skeletons in the motion capture and real-life video data. Therefore, our implementation performs <i>imitation</i> as well as <i>retargeting</i>. The imitation learning evaluation and rollout is based solely on the following features $z_t$, based on the states $\{s_t\}_{t=1\dots T}$:
+
             <ul>
                 <li>Five normalized 3D vector positions (relative to the pelvis) of the feet, hands, and head</li>
-                <li>Change in pelvis position averaged over the last $k$ time steps (where $k$ is set to 10 in our setting).<li>
+                <li>Change in pelvis position averaged over the last $k$ time steps (where $k$ is set to 10 in our setting).</li>
             </ul>
+            <p>
             The generated policy $\pi_g$ takes actions on all 21 joints.
+            </p>
         </p>
         <h2>Motion Capture Extraction and Resampling</h2>
         <p>
