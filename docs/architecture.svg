@@ -24,15 +24,15 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="5.6568543"
-     inkscape:cx="160.0681"
-     inkscape:cy="94.542347"
+     inkscape:zoom="1.4142136"
+     inkscape:cx="225.95604"
+     inkscape:cy="167.94806"
      inkscape:document-units="mm"
-     inkscape:current-layer="layer3"
+     inkscape:current-layer="layer5"
      showgrid="false"
      inkscape:window-width="1855"
      inkscape:window-height="1176"
-     inkscape:window-x="65"
+     inkscape:window-x="1985"
      inkscape:window-y="24"
      inkscape:window-maximized="1"
      inkscape:snap-bbox="false"
@@ -45,7 +45,9 @@
      fit-margin-top="0"
      fit-margin-left="0"
      fit-margin-right="0"
-     fit-margin-bottom="0">
+     fit-margin-bottom="0"
+     inkscape:snap-nodes="false"
+     inkscape:snap-global="false">
     <sodipodi:guide
        position="88.243547,59.085518"
        orientation="0,1"
@@ -330,6 +332,50 @@
          x="50.222347"
          y="118.54199" />
     </clipPath>
+    <clipPath
+       clipPathUnits="userSpaceOnUse"
+       id="clipPath1836">
+      <rect
+         y="42.705387"
+         x="5.4604616"
+         height="34.878674"
+         width="65.347397"
+         id="rect1838"
+         style="opacity:1;fill:#ffffff;fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:0.49424168;stroke-linecap:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:16.43840027;stroke-opacity:1" />
+    </clipPath>
+    <clipPath
+       clipPathUnits="userSpaceOnUse"
+       id="clipPath5675">
+      <rect
+         y="167.49988"
+         x="5.4604607"
+         height="34.878674"
+         width="65.347397"
+         id="rect5677"
+         style="opacity:1;fill:#e20000;fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:0.49424168;stroke-linecap:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:16.43840027;stroke-opacity:1" />
+    </clipPath>
+    <clipPath
+       clipPathUnits="userSpaceOnUse"
+       id="clipPath5675-5">
+      <rect
+         y="167.49988"
+         x="5.4604607"
+         height="34.878674"
+         width="65.347397"
+         id="rect5677-3"
+         style="opacity:1;fill:#e20000;fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:0.49424168;stroke-linecap:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:16.43840027;stroke-opacity:1" />
+    </clipPath>
+    <clipPath
+       clipPathUnits="userSpaceOnUse"
+       id="clipPath5740">
+      <rect
+         y="167.6825"
+         x="37.852417"
+         height="34.696056"
+         width="32.955448"
+         id="rect5742"
+         style="opacity:1;fill:#2c37c8;fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:0.35006517;stroke-linecap:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:16.43840027;stroke-opacity:1" />
+    </clipPath>
   </defs>
   <metadata
      id="metadata5">
@@ -384,16 +430,28 @@
      inkscape:label="GIFs 1"
      transform="translate(-2.2605974,-33.00886)">
     <image
-       sodipodi:absref="/home/eric/Pictures/walking_deepmind.gif"
+       sodipodi:absref="https://uscresl.github.io/humanoid-gail/docs/gifs/walking_deepmind.gif"
        y="122.24474"
        x="215.9753"
        id="image1003"
-       xlink:href="file:///home/eric/Pictures/walking_deepmind.gif"
+       xlink:href="https://uscresl.github.io/humanoid-gail/docs/gifs/walking_deepmind.gif"
        preserveAspectRatio="none"
        height="37.662624"
        width="29.293154"
        clip-path="url(#clipPath1025)"
        transform="matrix(1.0119899,0,0,0.98735071,-2.7109678,1.7199624)" />
+    <image
+       transform="translate(0,-1.0416667e-6)"
+       style=""
+       sodipodi:absref="https://uscresl.github.io/humanoid-gail/docs/gifs/trpo.gif"
+       y="39.088127"
+       x="5.4604645"
+       id="image1818"
+       xlink:href="https://uscresl.github.io/humanoid-gail/docs/gifs/trpo.gif"
+       preserveAspectRatio="none"
+       height="39.025101"
+       width="65.347397"
+       clip-path="url(#clipPath1836)" />
   </g>
   <g
      transform="translate(-2.2605974,-120.00886)"
@@ -436,36 +494,18 @@
        height="34.878674"
        width="65.347397"
        id="rect815"
-       style="opacity:1;fill:#ffffff;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:0.49424165;stroke-linecap:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:16.43840027;stroke-opacity:1" />
+       style="opacity:1;fill:none;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:0.49424165;stroke-linecap:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:16.43840027;stroke-opacity:1" />
     <text
        id="text827"
        y="161.647"
        x="27.025076"
-       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.87861204px;line-height:125%;font-family:Sarai;-inkscape-font-specification:Sarai;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.1219653px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.87861204px;line-height:125%;font-family:Sarai;-inkscape-font-specification:Sarai;letter-spacing:0px;word-spacing:0px;fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:0.1219653px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;"
        xml:space="preserve"><tspan
-         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:Georgia;-inkscape-font-specification:Georgia;stroke-width:0.1219653px"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:Georgia;-inkscape-font-specification:Georgia;stroke-width:0.1219653px;fill:#ffffff;fill-opacity:1;"
          y="161.647"
          x="27.025076"
          id="tspan825"
          sodipodi:role="line">RL Expert</tspan></text>
-    <rect
-       y="167.49988"
-       x="5.4604616"
-       height="34.878674"
-       width="65.347397"
-       id="rect815-0"
-       style="opacity:1;fill:#ffffff;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:0.49424168;stroke-linecap:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:16.43840027;stroke-opacity:1" />
-    <text
-       id="text827-1"
-       y="199.44151"
-       x="30.853167"
-       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.87861204px;line-height:125%;font-family:Sarai;-inkscape-font-specification:Sarai;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.1219653px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-       xml:space="preserve"><tspan
-         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:Georgia;-inkscape-font-specification:Georgia;stroke-width:0.1219653px"
-         y="199.44151"
-         x="30.853167"
-         id="tspan825-3"
-         sodipodi:role="line">Mocap</tspan></text>
     <rect
        y="205.29436"
        x="5.4604616"
@@ -484,6 +524,28 @@
          x="32.027561"
          id="tspan825-3-1"
          sodipodi:role="line">Video</tspan></text>
+    <image
+       sodipodi:absref="https://uscresl.github.io/humanoid-gail/docs/gifs/mocap_walk1.gif"
+       y="167.49988"
+       x="0.16879472"
+       id="image1903"
+       xlink:href="https://uscresl.github.io/humanoid-gail/docs/gifs/mocap_walk1.gif"
+       preserveAspectRatio="none"
+       height="34.878677"
+       width="51.155396"
+       clip-path="url(#clipPath5675-5)"
+       transform="matrix(0.99029602,0,0,0.99029602,0.0259135,1.7076093)" />
+    <image
+       sodipodi:absref="https://uscresl.github.io/humanoid-gail/docs/gifs/mocap_walk2.gif"
+       y="167.31807"
+       x="18.229164"
+       id="image1968"
+       xlink:href="https://uscresl.github.io/humanoid-gail/docs/gifs/mocap_walk2.gif"
+       preserveAspectRatio="none"
+       height="38.156445"
+       width="67.73333"
+       clip-path="url(#clipPath5740)"
+       transform="matrix(0.98906749,0,0,0.98906749,0.50952449,1.8331908)" />
   </g>
   <g
      inkscape:label="GAIL"
@@ -842,7 +904,7 @@
        sodipodi:nodetypes="cc" />
     <path
        style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:0.755;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;marker-start:url(#CurveOut)"
-       d="m 87.935556,91.111404 6.533394,6.769031 h 7.82846"
+       d="m 88.324163,97.880416 6.144787,1.9e-5 h 7.82846"
        id="path4641-3-5-3"
        inkscape:connector-curvature="0"
        sodipodi:nodetypes="ccc" />
@@ -853,44 +915,72 @@
      inkscape:label="GIFs"
      transform="translate(-2.2605974,-33.00886)">
     <image
-       sodipodi:absref="/home/eric/Pictures/walking_features.gif"
+       sodipodi:absref="https://uscresl.github.io/humanoid-gail/docs/gifs/walking_features.gif"
        y="80.72567"
        x="102.61185"
        id="image22871"
-       xlink:href="file:///home/eric/Pictures/walking_features.gif"
+       xlink:href="https://uscresl.github.io/humanoid-gail/docs/gifs/walking_features.gif"
        preserveAspectRatio="none"
        height="27.729671"
        width="64.773132" />
     <image
-       sodipodi:absref="/home/eric/Pictures/walking_3D.gif"
+       sodipodi:absref="https://uscresl.github.io/humanoid-gail/docs/gifs/walking_3D.gif"
        y="116.9854"
        x="40.902512"
        id="image1611"
-       xlink:href="file:///home/eric/Pictures/walking_3D.gif"
+       xlink:href="https://uscresl.github.io/humanoid-gail/docs/gifs/walking_3D.gif"
        preserveAspectRatio="none"
        height="29.104271"
        width="41.609146"
        clip-path="url(#clipPath1701)" />
     <image
-       sodipodi:absref="/home/eric/Pictures/walking_2D.gif"
+       sodipodi:absref="https://uscresl.github.io/humanoid-gail/docs/gifs/walking_2D.gif"
        y="118.48479"
        x="25.462719"
        id="image22806"
-       xlink:href="file:///home/eric/Pictures/walking_2D.gif"
+       xlink:href="https://uscresl.github.io/humanoid-gail/docs/gifs/walking_2D.gif"
        preserveAspectRatio="none"
        height="28.363031"
        width="28.363031"
        clip-path="url(#clipPath1695)" />
     <image
-       sodipodi:absref="/home/eric/Pictures/walking.gif"
+       sodipodi:absref="https://uscresl.github.io/humanoid-gail/docs/gifs/walking.gif"
        y="118.29436"
        x="5.4604616"
        id="image1677"
-       xlink:href="file:///home/eric/Pictures/walking.gif"
+       xlink:href="https://uscresl.github.io/humanoid-gail/docs/gifs/walking.gif"
        preserveAspectRatio="none"
        height="28.397392"
        width="28.397392"
        clip-path="url(#clipPath1691)"
        transform="translate(-2.6931974,0.24763249)" />
+    <text
+       transform="translate(0,-86.999999)"
+       id="text827-1"
+       y="199.44151"
+       x="30.853167"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.87861204px;line-height:125%;font-family:Sarai;-inkscape-font-specification:Sarai;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:#ffffff;stroke-width:0.522;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;stroke-miterlimit:4;stroke-dasharray:none;paint-order:markers stroke fill"
+       xml:space="preserve"><tspan
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:Georgia;-inkscape-font-specification:Georgia;stroke-width:0.522;stroke:#ffffff;stroke-opacity:1;stroke-miterlimit:4;stroke-dasharray:none;paint-order:markers stroke fill"
+         y="199.44151"
+         x="30.853167"
+         id="tspan825-3"
+         sodipodi:role="line">Mocap</tspan></text>
+    <rect
+       transform="translate(0,-86.999999)"
+       y="167.49988"
+       x="5.4604616"
+       height="34.878674"
+       width="65.347397"
+       id="rect815-0"
+       style="opacity:1;fill:none;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:0.49424168;stroke-linecap:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:16.43840027;stroke-opacity:1" />
+    <rect
+       transform="translate(0,-86.999999)"
+       style="opacity:1;fill:none;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:0.49424168;stroke-linecap:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:16.43840027;stroke-opacity:1"
+       id="rect5736"
+       width="65.347397"
+       height="34.878674"
+       x="5.4604616"
+       y="205.29436" />
   </g>
 </svg>
