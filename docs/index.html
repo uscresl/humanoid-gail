@@ -104,7 +104,7 @@ dt-banner {
                 <img class="l-body-outset" src="images/skeleton.png">
             </div>
         <p>
-            Note that this skeleton is not the same as the real skeletons in the motion capture and real-life video data. Therefore, our implementation performs <i>imitation</i> as well as <i>retargeting</i>. The imitation learning evaluation and rollout is based solely on the following features:
+            Note that this skeleton is not the same as the real skeletons in the motion capture and real-life video data. Therefore, our implementation performs <i>imitation</i> as well as <i>retargeting</i>. The imitation learning evaluation and rollout is based solely on the following features $z_t$, based on the states $\{s_t\}_{t=1\dots T}$:
             <ul>
                 <li>Five normalized 3D vector positions (relative to the pelvis) of the feet, hands, and head</li>
                 <li>Change in pelvis position averaged over the last $k$ time steps (where $k$ is set to 10 in our setting).<li>
@@ -118,7 +118,7 @@ dt-banner {
         <hr>
         <h2>Generator Policy Network $\pi_g$</h2>
         <p>
-            Our final policy network consists of a 3 layer network with neuron widths of (150, 150, 150). We also experimented with dual layer networks of hidden shape (32, 32) and (64, 64), but found the larger network necessary for reliable performance. We found that the size of the network necessary for adequate performance scales proportionally with the degrees of freedom present in the target skeleton. Unfortunately, larger networks also slowed training significantly.
+            Our final policy network consists of 3 hidden layers &agrave; 150 neurons. We also experimented with dual-layer networks of hidden shapes (32, 32) and (64, 64), but found the larger network necessary for reliable performance. We found that the size of the network necessary for adequate performance scales proportionally with the degrees of freedom present in the target skeleton. Unfortunately, larger networks also slowed training significantly.
         </p>
         <hr>
         <h2>Demonstrator Policy $\pi_d$</h2>
