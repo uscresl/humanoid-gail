@@ -1,4 +1,4 @@
-import gym
+import gym, os
 import matplotlib.pyplot as plt
 import pickle as pkl
 import numpy as np
@@ -98,7 +98,9 @@ def load_pickled_positions(pkl_file):
         return [v for ob in positions for v in ob]
 
 
-def plot_positions(positions, keys=["root"], title=None):
+def plot_positions(positions, keys=None, title=None):
+    if keys is None:
+        keys = ["root"]
     global plot_counter
     plot_counter += 1
     plt.figure(plot_counter)
@@ -132,7 +134,9 @@ def plot_positions(positions, keys=["root"], title=None):
     plt.legend()
 
 
-def plot_time_positions(positions, keys=["root"], title=None):
+def plot_time_positions(positions, keys=None, title=None):
+    if keys is None:
+        keys = ["root"]
     global plot_counter
     plot_counter += 1
     plt.figure(plot_counter)
@@ -168,17 +172,23 @@ def tabulate_features(features, title=None, scaling=10):
 
 if __name__ == "__main__":
     env = gym.make("HumanoidFeaturized-v1")
-    # trpo_features = load_pickled_features("/home/eric/.deep-rl-docker/gail-tf/rollout/stochastic.trpo.HumanoidFeaturized.0.00_sensical.pkl")
-    trpo_features = load_pickled_features("/home/eric/.deep-rl-docker/gail-tf/rollout/stochastic.trpo.HumanoidFeaturized.0.00.pkl")
-    mocap_features = load_pickled_features("/home/eric/.deep-rl-docker/gail-tf/rollout/mocap_trajectories.pkl")
+
+    trpo_rollout_path = os.path.expanduser("~/gail-tf/rollout/stochastic.trpo.HumanoidFeaturized.0.00.pkl")
+    mocap_rollout_path = os.path.expanduser("~/gail-tf/rollout/mocap_trajectories.pkl")
+
+    trpo_features = load_pickled_features(trpo_rollout_path)[:60]
+    mocap_features = load_pickled_features(mocap_rollout_path)[:60]
+
     plot_features(trpo_features.T, title="TRPO")
     plot_features(mocap_features.T, title="Mocap")
-    trpo_positions = load_pickled_positions(
-        "/home/eric/.deep-rl-docker/gail-tf/rollout/stochastic.trpo.HumanoidFeaturized.0.00.pkl")[:2000]
-    mocap_positions = load_pickled_positions("/home/eric/.deep-rl-docker/gail-tf/rollout/mocap_trajectories.pkl")[:2000]
+
+    trpo_positions = load_pickled_positions(trpo_rollout_path)[:2000]
+    mocap_positions = load_pickled_positions(mocap_rollout_path)[:2000]
+
     plot_time_positions(trpo_positions, keys=["root"], title="TRPO")
     plot_time_positions(mocap_positions, keys=["root"], title="Mocap")
 
     tabulate_features(trpo_features.T, title="TRPO")
     tabulate_features(mocap_features.T, title="Mocap")
+
     plt.show()
