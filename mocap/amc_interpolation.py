@@ -365,7 +365,7 @@ if __name__ == "__main__":
     #     print("USAGE: %s INPUT_FILENAME OUTPUT_FILENAME SRC_FRAMERATE DST_FRAMERATE" % sys.argv[0])
     # else:
     import glob
-    for filename in glob.glob("animations/*.amc"):
+    for filename in glob.glob("animations/running/*.amc"):
         interpolate(filename,
                     filename[:len("animations")] + "_resampled" + filename[len("animations"):],
                     120,

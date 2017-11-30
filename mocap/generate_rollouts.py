@@ -38,4 +38,4 @@ def generate_rollouts(asf_file=os.path.join(os.path.dirname(__file__), "examples
 
 
 if __name__ == "__main__":
-    generate_rollouts(amc_folder="animations_resampled")
+    generate_rollouts(amc_folder="animations_resampled/running")
