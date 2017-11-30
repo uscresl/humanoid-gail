@@ -32,7 +32,7 @@ dt-banner {
       - USC: http://usc.edu
 </script>
 <dt-article class="centered" style="text-align:justify">
-    <h1>Humanoid Imitation Learning from Video</h1>
+    <h1>Humanoid Imitation Learning from Diverse Sources</h1>
     <p>
     <div class="l-middle-outset">
     <p>
@@ -63,7 +63,7 @@ dt-banner {
     <h2>Our GAIL Implementation</h2>
     <p>
         The original GAIL formulation introduced by Ho et al.
-        <dt-cite key="GAIL"></dt-cite> proposes a method where expert demonstrations containing both states $s$ and corresponding actions $a$ are presented to the discriminator. In a real-life imitation learning problem, such as humanoid motion, the actions (e.g. joint torques) are difficult to obtain compared to states (e.g. joint positions) as it would require solving complex inverse kinematics problems. Our work attempts to address this and other practical modifications necessary for using GAIL for imitation learning outside simulated environments.
+        <dt-cite key="GAIL"></dt-cite> proposes a method where expert demonstrations containing both states $s$ and corresponding actions $a$ are presented to the discriminator. The discriminator network consists of two hidden layers of 100 neurons with tangential activation functions. In a real-life imitation learning problem, such as humanoid motion, the actions (e.g. joint torques) are difficult to obtain compared to states (e.g. joint positions) as it would require solving complex inverse kinematics problems. Our work attempts to address this and other practical modifications necessary for using GAIL for imitation learning outside simulated environments.
     </p>
     <h3>Overall Algorithm</h3>
     <p>
@@ -117,7 +117,7 @@ dt-banner {
         </p>
         <h3>Generator Policy Network $\pi_g$</h3>
         <p>
-            Our final policy network consists of 3 hidden layers, each of 150 neurons. We also experimented with dual-layer networks of hidden shapes (32, 32) and (64, 64), but found the larger network necessary for reliable performance. We found that the size of the network necessary for adequate performance scales proportionally with the degrees of freedom present in the target skeleton. Unfortunately, larger networks also slow training significantly.
+            Our final policy network consists of 3 hidden layers, each of 150 neurons, all of them with tangential activation functions. We also experimented with dual-layer networks of hidden shapes (32, 32) and (64, 64), but found the larger network necessary for reliable performance. We found that the size of the network necessary for adequate performance scales proportionally with the degrees of freedom present in the target skeleton. Unfortunately, larger networks also slow training significantly.
         </p>
         <h3>Expert Policy $\pi_d$</h3>
         <p>
