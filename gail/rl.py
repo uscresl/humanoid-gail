@@ -52,7 +52,8 @@ class HumanoidEnv(gym.Env):
 def train(num_timesteps, num_cpu):
     rank = MPI.COMM_WORLD.Get_rank()
     ncpu = num_cpu
-    if sys.platform == 'darwin': ncpu //= 2
+    if sys.platform == 'darwin':
+        ncpu //= 2
     config = tf.ConfigProto(allow_soft_placement=True,
                             intra_op_parallelism_threads=ncpu,
                             inter_op_parallelism_threads=ncpu)
@@ -78,7 +79,7 @@ def train(num_timesteps, num_cpu):
     gym.logger.setLevel(logging.WARN)
 
     def callback(locals, globals):
-        if locals['iters_so_far'] % 50 == 0:
+        if MPI.COMM_WORLD.Get_rank() == 0 and locals['iters_so_far'] % 50 == 0:
             print('Saving video and checkpoint for policy at iteration %i...' % locals['iters_so_far'])
             ob = env.reset()
             images = []
