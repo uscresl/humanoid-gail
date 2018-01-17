@@ -14,44 +14,16 @@ from gym.spaces import box
 import numpy as np
 import tensorflow as tf
 
-from gail.features import extract_features, extract_observations
-
 from baselines.ppo1 import pposgd_simple, mlp_policy
+from baselines.trpo_mpi import trpo_mpi
 import baselines.common.tf_util as U
 
 from dm_control.rl import environment
-from dm_control.suite import humanoid_CMU
-from dm_control.mujoco import engine
 from dm_control import suite
 
 
-class HumanoidEnv(gym.Env):
-    def __init__(self):
-        self.dm_env = humanoid_CMU.run()
-        self.dm_env.reset()
-        ob = self.observation()
-        self.observation_space = gym.spaces.Box(low=-10, high=10, shape=ob.shape)
-        action_spec = engine.action_spec(self.dm_env.physics)
-        self.action_space = gym.spaces.Box(low=-1, high=1, shape=action_spec.shape)
-
-    def _step(self, action):
-        step = self.dm_env.step(action)
-        last_step = (step.step_type == environment.StepType.LAST)
-        ob = self.observation()
-        return ob, step.reward, last_step, {}
-
-    def _reset(self):
-        self.dm_env.reset()
-        return self.observation()
-
-    def observation(self):
-        ob = np.hstack([extract_features(self.dm_env),
-                        extract_observations(self.dm_env)])
-        return ob
-
-
 class DMSuiteEnv(gym.Env):
-    def __init__(self, domain_name="cartpole", task_name="balance", visualize_reward=True):
+    def __init__(self, domain_name="cartpole", task_name="swingup", visualize_reward=True):
         self.dm_env = suite.load(domain_name=domain_name,
                                  task_name=task_name,
                                  visualize_reward=visualize_reward)
@@ -65,23 +37,21 @@ class DMSuiteEnv(gym.Env):
                                                     high=ob_spec.maximum[0],
                                                     shape=ob_spec.shape)
         except NotImplementedError:
-            print("Could not retrieve observation spec, min/max possibly incorrect.")
-            # sample observation and set range to [-1,1]
+            print("Could not retrieve observation spec, min/max possibly incorrect.", file=sys.stderr)
+            # sample observation and set range to [-10, 10]
             ob = self.dm_env.task.get_observation(self.dm_env.physics)
             # ob is an OrderedDict, iterate over all entries to determine overall flattened ob dim
             ob_dimension = 0
             for entry in ob.values():
                 ob_dimension += len(entry.flatten())
-            self.observation_space = gym.spaces.Box(low=-1,
-                                                    high=1,
+            self.observation_space = gym.spaces.Box(low=-10,
+                                                    high=10,
                                                     shape=(ob_dimension,))
         self.reward_range = (0, 1)
 
     def _step(self, action):
         step = self.dm_env.step(action)
         last_step = (step.step_type == environment.StepType.LAST)
-        if last_step:
-            print("Reached last step")
         ob = self.observe()
         return ob, step.reward, last_step, {}
 
@@ -95,7 +65,7 @@ class DMSuiteEnv(gym.Env):
         return ob
 
 
-def train(num_timesteps, num_cpu):
+def train(num_timesteps, num_cpu, method, domain, task):
     rank = MPI.COMM_WORLD.Get_rank()
     ncpu = num_cpu
     if sys.platform == 'darwin':
@@ -113,8 +83,7 @@ def train(num_timesteps, num_cpu):
     workerseed = 123 + 10000 * MPI.COMM_WORLD.Get_rank()
     set_global_seeds(workerseed)
 
-    # env = HumanoidEnv()
-    env = DMSuiteEnv()
+    env = DMSuiteEnv(domain, task)
 
     def policy_fn(name, ob_space, ac_space):  # pylint: disable=W0613
         return mlp_policy.MlpPolicy(name=name, ob_space=ob_space, ac_space=ac_space,
@@ -137,19 +106,30 @@ def train(num_timesteps, num_cpu):
                 if new:
                     break
                 images.append(env.env.dm_env.physics.render(400, 400, camera_id=1))
-            imageio.mimsave("videos/iteration_%i.mp4" % locals['iters_so_far'], images, fps=60)
+            imageio.mimsave("videos/%s_%s_%s_iteration_%i.mp4" % (domain, task, method, locals['iters_so_far']),
+                            images, fps=60)
             env.reset()
-            U.save_state(os.path.join("checkpoints", "CMUHumanoid_Run_%i" % locals['iters_so_far']))
+            U.save_state(os.path.join("checkpoints", "%s_%s_%i" % (domain, task, locals['iters_so_far'])))
 
-    pposgd_simple.learn(env, policy_fn,
-                        max_timesteps=int(num_timesteps),
-                        timesteps_per_actorbatch=256,
-                        clip_param=0.2, entcoeff=0.01,
-                        optim_epochs=4, optim_stepsize=1e-3, optim_batchsize=64,
-                        gamma=0.99, lam=0.95,
-                        schedule='linear',
-                        callback=callback
-                        )
+    if method == "ppo":
+        pposgd_simple.learn(env, policy_fn,
+                            max_timesteps=int(num_timesteps),
+                            timesteps_per_actorbatch=256,
+                            clip_param=0.2, entcoeff=0.01,
+                            optim_epochs=4, optim_stepsize=1e-3, optim_batchsize=64,
+                            gamma=0.99, lam=0.95,
+                            schedule='linear',
+                            callback=callback
+                            )
+    elif method == "trpo":
+        trpo_mpi.learn(env, policy_fn,
+                       max_timesteps=int(num_timesteps),
+                       timesteps_per_batch=1024, max_kl=0.01, cg_iters=10, cg_damping=0.1,
+                       gamma=0.99, lam=0.98, vf_iters=5, vf_stepsize=1e-3,
+                       callback=callback
+                       )
+    else:
+        print('ERROR: Invalid "method" argument provided.', file=sys.stderr)
     env.close()
 
 
@@ -158,8 +138,18 @@ def main():
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--num-timesteps', type=int, default=int(10e6))
     parser.add_argument('--num_cpu', help='number of cpu to used', type=int, default=4)
+    parser.add_argument('--method', help='reinforcement learning algorithm to use (ppo/trpo)',
+                        type=str, default='ppo')
+    parser.add_argument('--domain', help='domain to use for the RL environment from DM Control Suite',
+                        type=str, default='cartpole')
+    parser.add_argument('--task', help='task to use for the RL environment from DM Control Suite',
+                        type=str, default='swingup')
     args = parser.parse_args()
-    train(num_timesteps=args.num_timesteps, num_cpu=args.num_cpu)
+    train(num_timesteps=args.num_timesteps,
+          num_cpu=args.num_cpu,
+          method=args.method.lower(),
+          domain=args.domain,
+          task=args.task)
 
 
 if __name__ == '__main__':
