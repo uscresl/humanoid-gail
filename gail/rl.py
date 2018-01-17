@@ -48,6 +48,11 @@ class DMSuiteEnv(gym.Env):
                                                     high=10,
                                                     shape=(ob_dimension,))
         self.reward_range = (0, 1)
+        print('Initialized %s - %s.' % (domain_name, task_name))
+        print('\tobservation space: %s (min: %.2f, max: %.2f)' %
+              (str(self.observation_space.shape), self.observation_space.low[0], self.observation_space.high[0]))
+        print('\taction space: %s (min: %.2f, max: %.2f)' %
+              (str(self.action_space.shape), self.action_space.low[0], self.action_space.high[0]))
 
     def _step(self, action):
         step = self.dm_env.step(action)
@@ -87,7 +92,7 @@ def train(num_timesteps, num_cpu, method, domain, task):
 
     def policy_fn(name, ob_space, ac_space):  # pylint: disable=W0613
         return mlp_policy.MlpPolicy(name=name, ob_space=ob_space, ac_space=ac_space,
-                                    hid_size=32, num_hid_layers=2)
+                                    hid_size=64, num_hid_layers=3)
 
     env = bench.Monitor(env, logger.get_dir() and
                         osp.join(logger.get_dir(), str(rank)),
