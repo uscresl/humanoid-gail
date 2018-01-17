@@ -22,6 +22,7 @@ import baselines.common.tf_util as U
 from dm_control.rl import environment
 from dm_control.suite import humanoid_CMU
 from dm_control.mujoco import engine
+from dm_control import suite
 
 
 class HumanoidEnv(gym.Env):
@@ -49,6 +50,51 @@ class HumanoidEnv(gym.Env):
         return ob
 
 
+class DMSuiteEnv(gym.Env):
+    def __init__(self, domain_name="cartpole", task_name="balance", visualize_reward=True):
+        self.dm_env = suite.load(domain_name=domain_name,
+                                 task_name=task_name,
+                                 visualize_reward=visualize_reward)
+        action_spec = self.dm_env.action_spec()
+        self.action_space = gym.spaces.Box(low=action_spec.minimum[0],
+                                           high=action_spec.maximum[0],
+                                           shape=action_spec.shape)
+        try:
+            ob_spec = self.dm_env.task.observation_spec(self.dm_env.physics)
+            self.observation_space = gym.spaces.Box(low=ob_spec.minimum[0],
+                                                    high=ob_spec.maximum[0],
+                                                    shape=ob_spec.shape)
+        except NotImplementedError:
+            print("Could not retrieve observation spec, min/max possibly incorrect.")
+            # sample observation and set range to [-1,1]
+            ob = self.dm_env.task.get_observation(self.dm_env.physics)
+            # ob is an OrderedDict, iterate over all entries to determine overall flattened ob dim
+            ob_dimension = 0
+            for entry in ob.values():
+                ob_dimension += len(entry.flatten())
+            self.observation_space = gym.spaces.Box(low=-1,
+                                                    high=1,
+                                                    shape=(ob_dimension,))
+        self.reward_range = (0, 1)
+
+    def _step(self, action):
+        step = self.dm_env.step(action)
+        last_step = (step.step_type == environment.StepType.LAST)
+        if last_step:
+            print("Reached last step")
+        ob = self.observe()
+        return ob, step.reward, last_step, {}
+
+    def _reset(self):
+        self.dm_env.reset()
+        return self.observe()
+
+    def observe(self):
+        src_ob = self.dm_env.task.get_observation(self.dm_env.physics)
+        ob = np.hstack(entry.flatten() for entry in src_ob.values())
+        return ob
+
+
 def train(num_timesteps, num_cpu):
     rank = MPI.COMM_WORLD.Get_rank()
     ncpu = num_cpu
@@ -66,7 +112,9 @@ def train(num_timesteps, num_cpu):
         logger.configure(format_strs=[])
     workerseed = 123 + 10000 * MPI.COMM_WORLD.Get_rank()
     set_global_seeds(workerseed)
-    env = HumanoidEnv()
+
+    # env = HumanoidEnv()
+    env = DMSuiteEnv()
 
     def policy_fn(name, ob_space, ac_space):  # pylint: disable=W0613
         return mlp_policy.MlpPolicy(name=name, ob_space=ob_space, ac_space=ac_space,
