@@ -6,12 +6,12 @@
 * OpenAI Gym
 * OpenAI Baselines
 
-## Run
+## Reinforcement Learning
 Train a CMU Humanoid from DeepMind Control Suite via PPO:
 ```sh
 export NUM_CPU=8
 PYTHONPATH=..:$PYTHONPATH mpirun -np $NUM_CPU python3 rl.py \
-        --num_cpu $NUM_CPU \
+        --num-cpu $NUM_CPU \
         --method trpo \
         --domain humanoid \
         --task run \
@@ -20,3 +20,4 @@ PYTHONPATH=..:$PYTHONPATH mpirun -np $NUM_CPU python3 rl.py \
 
 ## TODO
 * Try [PPO2](https://github.com/openai/baselines/blob/master/baselines/ppo2/ppo2.py)
+* Make DDPG compatible with callback function to visualize and save policy during training
