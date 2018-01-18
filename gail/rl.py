@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import imageio, os, sys
+import imageio, os, sys, traceback
 from mpi4py import MPI
 import os.path as osp
 import gym, logging
@@ -58,10 +58,21 @@ class DMSuiteEnv(gym.Env):
               (str(self.action_space.shape), self.action_space.low[0], self.action_space.high[0]))
 
     def _step(self, action):
-        step = self.dm_env.step(action)
-        last_step = (step.step_type == environment.StepType.LAST)
+        # noinspection PyBroadException
+        try:
+            step = self.dm_env.step(action)
+            last_step = step.last()
+            reward = step.reward
+        except:
+            # could only be dm_control.rl.control.PhysicsError?
+            # reset environment for bad controls
+            print(traceback.format_exc(), file=sys.stderr)
+            self.dm_env.reset()
+            last_step = True
+            reward = 0
+
         ob = self.observe()
-        return ob, step.reward, last_step, {}
+        return ob, reward, last_step, {}
 
     def _reset(self):
         self.dm_env.reset()
@@ -102,7 +113,7 @@ def train(num_timesteps, num_cpu, method, domain, task, noise_type, layer_norm,
 
     def policy_fn(name, ob_space, ac_space):  # pylint: disable=W0613
         return mlp_policy.MlpPolicy(name=name, ob_space=ob_space, ac_space=ac_space,
-                                    hid_size=64, num_hid_layers=2)
+                                    hid_size=150, num_hid_layers=3)
 
     env = bench.Monitor(env, logger.get_dir() and
                         osp.join(logger.get_dir(), str(rank)),
@@ -127,9 +138,9 @@ def train(num_timesteps, num_cpu, method, domain, task, noise_type, layer_norm,
                     for j, r in enumerate(rewards):
                         img[-lower_part, :10] = 255
                         img[-lower_part, -10:] = 255
-                        rew_x = int(j/1000. * video_width)
+                        rew_x = int(j / 1000. * video_width)
                         rew_y = int(r * lower_part)
-                        img[-rew_y-1:, rew_x] = 255
+                        img[-rew_y - 1:, rew_x] = 255
                 images.append(img)
 
             imageio.mimsave("videos/%s_%s_%s_iteration_%i.mp4" % (domain, task, method, locals['iters_so_far']),
