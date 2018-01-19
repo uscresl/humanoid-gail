@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import imageio, os, sys, traceback
+import imageio, os, sys, traceback, datetime, pathlib, json
 from mpi4py import MPI
 import os.path as osp
 import gym, logging
@@ -23,10 +23,11 @@ from baselines.ddpg.noise import *
 
 from dm_control.rl import environment
 from dm_control import suite
+from dm_control.mujoco.wrapper import mjbindings
 
 
 class DMSuiteEnv(gym.Env):
-    def __init__(self, domain_name="cartpole", task_name="swingup", visualize_reward=True):
+    def __init__(self, domain_name="cartpole", task_name="swingup", visualize_reward=True, deterministic_reset=False):
         self.dm_env = suite.load(domain_name=domain_name,
                                  task_name=task_name,
                                  visualize_reward=visualize_reward)
@@ -34,6 +35,7 @@ class DMSuiteEnv(gym.Env):
         self.action_space = gym.spaces.Box(low=action_spec.minimum[0],
                                            high=action_spec.maximum[0],
                                            shape=action_spec.shape)
+        self.deterministic_reset = deterministic_reset
         try:
             ob_spec = self.dm_env.task.observation_spec(self.dm_env.physics)
             self.observation_space = gym.spaces.Box(low=ob_spec.minimum[0],
@@ -63,6 +65,24 @@ class DMSuiteEnv(gym.Env):
             step = self.dm_env.step(action)
             last_step = step.last()
             reward = step.reward
+
+            # compute custom reward for standing task
+            # TODO remove
+            # from dm_control.utils import rewards
+            # physics = self.dm_env.physics
+            # _STAND_HEIGHT = 1.4
+            # standing = rewards.tolerance(physics.head_height(),
+            #                              bounds=(_STAND_HEIGHT, float('inf')),
+            #                              margin=_STAND_HEIGHT)
+            # upright = rewards.tolerance(physics.torso_upright(),
+            #                             bounds=(0.9, float('inf')), sigmoid='linear',
+            #                             margin=1.9, value_at_margin=0)
+            # stand_reward = standing * upright
+            # small_control = rewards.tolerance(physics.control(), margin=1,
+            #                                   value_at_margin=0,
+            #                                   sigmoid='quadratic').mean()
+            # small_control = (4 + small_control) / 5
+            # reward = small_control * stand_reward
         except:
             # could only be dm_control.rl.control.PhysicsError?
             # reset environment for bad controls
@@ -76,6 +96,43 @@ class DMSuiteEnv(gym.Env):
 
     def _reset(self):
         self.dm_env.reset()
+
+        if self.deterministic_reset:
+            hinge = mjbindings.enums.mjtJoint.mjJNT_HINGE
+            slide = mjbindings.enums.mjtJoint.mjJNT_SLIDE
+            ball = mjbindings.enums.mjtJoint.mjJNT_BALL
+            free = mjbindings.enums.mjtJoint.mjJNT_FREE
+
+            physics = self.dm_env.physics
+
+            for joint_id in range(physics.model.njnt):
+                joint_name = physics.model.id2name(joint_id, 'joint')
+                joint_type = physics.model.jnt_type[joint_id]
+                is_limited = physics.model.jnt_limited[joint_id]
+                range_min, range_max = physics.model.jnt_range[joint_id]
+
+                if is_limited:
+                    if joint_type == hinge or joint_type == slide:
+                        self.dm_env.physics.named.data.qpos[joint_name] = np.mean([range_min, range_max])  # random.uniform(range_min, range_max)
+
+                    elif joint_type == ball:
+                        self.dm_env.physics.named.data.qpos[joint_name] = np.mean([range_min, range_max])  # random_limited_quaternion(random, range_max)
+
+                else:
+                    if joint_type == hinge:
+                        self.dm_env.physics.named.data.qpos[joint_name] = 0.  # random.uniform(-np.pi, np.pi)
+
+                    elif joint_type == ball:
+                        quat = np.zeros(4)  # random.randn(4)
+                        # quat /= np.linalg.norm(quat)
+                        self.dm_env.physics.named.data.qpos[joint_name] = quat
+
+                    elif joint_type == free:
+                        quat = np.zeros(4)  # random.rand(4)
+                        # quat /= np.linalg.norm(quat)
+                        self.dm_env.physics.named.data.qpos[joint_name][3:] = quat
+            self.dm_env.physics.after_reset()
+
         return self.observe()
 
     def _seed(self, seed=None):
@@ -88,27 +145,24 @@ class DMSuiteEnv(gym.Env):
         return ob
 
 
-def train(num_timesteps, num_cpu, method, domain, task, noise_type, layer_norm,
-          video_width, video_height, plot_rewards, render_camera, **kwargs):
-    rank = MPI.COMM_WORLD.Get_rank()
+def train(num_timesteps, num_cpu, method, domain, task, noise_type, layer_norm, folder,
+          video_width, video_height, plot_rewards, render_camera, deterministic_reset, **kwargs):
+
     if sys.platform == 'darwin':
         num_cpu //= 2
     config = tf.ConfigProto(allow_soft_placement=True,
                             intra_op_parallelism_threads=num_cpu,
                             inter_op_parallelism_threads=num_cpu)
     config.gpu_options.allow_growth = True  # pylint: disable=E1101
-    gym.logger.setLevel(logging.WARN)
     tf.Session(config=config).__enter__()
-    if rank == 0:
-        logger.configure()
-    else:
-        logger.configure(format_strs=[])
 
     worker_seed = 1234 + 10000 * MPI.COMM_WORLD.Get_rank()
     set_global_seeds(worker_seed)
 
-    env = DMSuiteEnv(domain, task)
+    env = DMSuiteEnv(domain, task, deterministic_reset=deterministic_reset)
     env.seed(worker_seed)
+
+    rank = MPI.COMM_WORLD.Get_rank()
     logger.info('rank {}: seed={}, logdir={}'.format(rank, worker_seed, logger.get_dir()))
 
     def policy_fn(name, ob_space, ac_space):  # pylint: disable=W0613
@@ -143,10 +197,10 @@ def train(num_timesteps, num_cpu, method, domain, task, noise_type, layer_norm,
                         img[-rew_y - 1:, rew_x] = 255
                 images.append(img)
 
-            imageio.mimsave("videos/%s_%s_%s_iteration_%i.mp4" % (domain, task, method, locals['iters_so_far']),
+            imageio.mimsave(os.path.join(folder, "videos", "%s_%s_%s_iteration_%i.mp4" % (domain, task, method, locals['iters_so_far'])),
                             images, fps=60)
             env.reset()
-            U.save_state(os.path.join("checkpoints", "%s_%s_%i" % (domain, task, locals['iters_so_far'])))
+            U.save_state(os.path.join(folder, "checkpoints", "%s_%s_%i" % (domain, task, locals['iters_so_far'])))
 
     if method == "ppo":
         pposgd_simple.learn(env, policy_fn,
@@ -165,8 +219,14 @@ def train(num_timesteps, num_cpu, method, domain, task, noise_type, layer_norm,
     elif method == "trpo":
         trpo_mpi.learn(env, policy_fn,
                        max_timesteps=int(num_timesteps),
-                       timesteps_per_batch=1024, max_kl=0.01, cg_iters=10, cg_damping=0.1,
-                       gamma=0.99, lam=0.98, vf_iters=5, vf_stepsize=1e-3,
+                       timesteps_per_batch=1024,
+                       max_kl=0.01,
+                       cg_iters=10,
+                       cg_damping=0.1,
+                       gamma=0.99,
+                       lam=0.98,
+                       vf_iters=5,
+                       vf_stepsize=1e-3,
                        callback=callback
                        )
     elif method == "ddpg":
@@ -204,7 +264,52 @@ def train(num_timesteps, num_cpu, method, domain, task, noise_type, layer_norm,
     env.close()
 
 
-def main():
+def main(**kwargs):
+    rank = MPI.COMM_WORLD.Get_rank()
+    if rank == 0:
+        timestamp = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+        folder_name = "{timestamp}-{kwargs[domain]}-{kwargs[task]}-{kwargs[method]}".format(timestamp=timestamp,
+                                                                                            kwargs=kwargs)
+        folder_name = os.path.abspath(os.path.join('logs', folder_name))
+        pathlib.Path(folder_name, "videos").mkdir(parents=True, exist_ok=True)
+        pathlib.Path(folder_name, "checkpoints").mkdir(parents=True, exist_ok=True)
+
+        logger.configure(dir=folder_name, format_strs=['log', 'stdout'])
+
+        run_json = {
+            "time": timestamp,
+            "settings": kwargs,
+            "src_files": {
+                "rl.py": "".join(open(sys.argv[0], "r"))  # TODO handle case with no sys.argv[0]
+            }
+        }
+
+        try:
+            import git
+            repo = git.Repo(search_parent_directories=True)
+            run_json["git"] = {
+                "head": repo.head.object.hexsha,
+                "branch": str(repo.active_branch),
+                "summary": repo.head.object.summary,
+                "time": repo.head.object.committed_datetime.strftime("%Y-%m-%d-%H-%M-%S"),
+                "author": {
+                    "name": repo.head.object.author.name,
+                    "email": repo.head.object.author.email
+                }
+            }
+        except:
+            print("Could not gather git repo information.", file=sys.stderr)
+
+        json.dump(run_json, open(os.path.join(folder_name, "run.json"), "w"))
+    else:
+        logger.configure(format_strs=[])
+        folder_name = None
+
+    folder_name = MPI.COMM_WORLD.bcast(folder_name, root=0)
+    train(folder=folder_name, **kwargs)
+
+
+if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--num-timesteps', type=int, default=int(10e6))
@@ -212,9 +317,9 @@ def main():
     parser.add_argument('--method', help='reinforcement learning algorithm to use (ppo/trpo/ddpg)',
                         type=str, default='ppo')
     parser.add_argument('--domain', help='domain to use for the RL environment from DM Control Suite',
-                        type=str, default='cartpole')
+                        type=str, default='humanoid')
     parser.add_argument('--task', help='task to use for the RL environment from DM Control Suite',
-                        type=str, default='swingup')
+                        type=str, default='stand')
 
     # DDPG settings
     boolean_flag(parser, 'normalize-returns', default=False)
@@ -241,10 +346,7 @@ def main():
     parser.add_argument('--video-height', type=int, default=400)
     boolean_flag(parser, 'plot-rewards', default=True)
     parser.add_argument('--render-camera', type=int, default=1)
+    boolean_flag(parser, 'deterministic-reset', default=False)
 
     args = parser.parse_args()
-    train(**vars(args))
-
-
-if __name__ == '__main__':
-    main()
+    main(**vars(args))
