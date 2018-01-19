@@ -65,6 +65,13 @@ class DMSuiteEnv(gym.Env):
             step = self.dm_env.step(action)
             last_step = step.last()
             reward = step.reward
+            if reward is None:
+                reward = 0
+
+            physics = self.dm_env.physics
+            _STAND_HEIGHT = 1.4
+            # stop episode when falling
+            last_step = physics.head_height() < _STAND_HEIGHT/4.
 
             # compute custom reward for standing task
             # TODO remove
@@ -145,7 +152,7 @@ class DMSuiteEnv(gym.Env):
         return ob
 
 
-def train(num_timesteps, num_cpu, method, domain, task, noise_type, layer_norm, folder,
+def train(num_timesteps, num_cpu, method, domain, task, noise_type, layer_norm, folder, load_policy,
           video_width, video_height, plot_rewards, render_camera, deterministic_reset, **kwargs):
 
     if sys.platform == 'darwin':
@@ -172,9 +179,17 @@ def train(num_timesteps, num_cpu, method, domain, task, noise_type, layer_norm, 
     env = bench.Monitor(env, logger.get_dir() and
                         osp.join(logger.get_dir(), str(rank)),
                         allow_early_resets=True)
-    gym.logger.setLevel(logging.WARN)
+    gym.logger.setLevel(logging.INFO)
 
     def callback(locals, globals):
+        if load_policy is not None:
+            # noinspection PyBroadException
+            try:
+                U.load_state(load_policy)
+                if MPI.COMM_WORLD.Get_rank() == 0:
+                    logger.info("Loaded policy network weights from %s." % load_policy)
+            except:
+                logger.error("Failed to load policy network weights from %s." % load_policy)
         if MPI.COMM_WORLD.Get_rank() == 0 and locals['iters_so_far'] % 50 == 0:
             print('Saving video and checkpoint for policy at iteration %i...' % locals['iters_so_far'])
             ob = env.reset()
@@ -184,8 +199,6 @@ def train(num_timesteps, num_cpu, method, domain, task, noise_type, layer_norm, 
             for i in range(1000):
                 ac, vpred = locals['pi'].act(False, ob)
                 ob, rew, new, _ = env.step(ac)
-                if new:
-                    break
                 img = env.env.dm_env.physics.render(video_width, video_height, camera_id=render_camera)
                 if plot_rewards:
                     rewards.append(rew)
@@ -196,6 +209,8 @@ def train(num_timesteps, num_cpu, method, domain, task, noise_type, layer_norm, 
                         rew_y = int(r * lower_part)
                         img[-rew_y - 1:, rew_x] = 255
                 images.append(img)
+                if new:
+                    break
 
             imageio.mimsave(os.path.join(folder, "videos", "%s_%s_%s_iteration_%i.mp4" % (domain, task, method, locals['iters_so_far'])),
                             images, fps=60)
@@ -220,7 +235,7 @@ def train(num_timesteps, num_cpu, method, domain, task, noise_type, layer_norm, 
         trpo_mpi.learn(env, policy_fn,
                        max_timesteps=int(num_timesteps),
                        timesteps_per_batch=1024,
-                       max_kl=0.01,
+                       max_kl=0.1,  # 0.01
                        cg_iters=10,
                        cg_damping=0.1,
                        gamma=0.99,
@@ -347,6 +362,9 @@ if __name__ == '__main__':
     boolean_flag(parser, 'plot-rewards', default=True)
     parser.add_argument('--render-camera', type=int, default=1)
     boolean_flag(parser, 'deterministic-reset', default=False)
+
+    # load existing policy network weights
+    parser.add_argument('--load-policy', type=str, default=None)
 
     args = parser.parse_args()
     main(**vars(args))
