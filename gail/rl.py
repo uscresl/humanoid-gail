@@ -79,9 +79,10 @@ class DMSuiteEnv(gym.Env):
                 reward = 0
 
             physics = self.dm_env.physics
-            _STAND_HEIGHT = 1.4
+
             # stop episode when falling
-            last_step = physics.head_height() < _STAND_HEIGHT/4.
+            _STAND_HEIGHT = 1.4
+            # last_step = physics.head_height() < _STAND_HEIGHT/4.
 
             # compute custom reward for standing task
             # TODO remove
@@ -260,7 +261,7 @@ def train(num_timesteps, num_cpu, method, domain, task, noise_type, layer_norm, 
             optim_batchsize=64,
             gamma=0.99,
             lam=0.95,
-            schedule='constant',  # 'linear'
+            schedule='linear',  # 'linear'
             callback=callback)
     elif method == "trpo":
         trpo_mpi.learn(
@@ -349,6 +350,7 @@ def main(**kwargs):
             }
         }
 
+        # noinspection PyBroadException
         try:
             import git
             repo = git.Repo(search_parent_directories=True)
@@ -365,7 +367,7 @@ def main(**kwargs):
         except:
             print("Could not gather git repo information.", file=sys.stderr)
 
-        json.dump(run_json, open(os.path.join(folder_name, "run.json"), "w"))
+        json.dump(run_json, open(os.path.join(folder_name, "run.json"), "w"), indent=4)
     else:
         logger.configure(format_strs=[])
         folder_name = None
