@@ -205,7 +205,7 @@ def train(num_timesteps, num_cpu, method, domain, task, noise_type, layer_norm, 
     gym.logger.setLevel(logging.INFO)
 
     def callback(locals, globals):
-        if load_policy is not None:
+        if load_policy is not None and locals['iters_so_far'] == 0:
             # noinspection PyBroadException
             try:
                 U.load_state(load_policy)
