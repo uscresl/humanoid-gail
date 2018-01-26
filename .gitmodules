@@ -1,0 +1,3 @@
+[submodule "gail/rllab"]
+	path = gail/rllab
+	url = https://github.com/rll/rllab.git

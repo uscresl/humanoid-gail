@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 
-import imageio, os, sys, traceback, datetime, pathlib, json
+import imageio, os, sys, datetime, pathlib, json
 from mpi4py import MPI
 import os.path as osp
 import gym, logging
 
-from gym.spaces import box
 import tensorflow as tf
 
 from baselines import bench, logger
@@ -21,157 +20,9 @@ from baselines.ddpg.models import Actor, Critic
 from baselines.ddpg.memory import Memory
 from baselines.ddpg.noise import *
 
-from dm_control.rl import environment
-from dm_control import suite
-from dm_control.mujoco.wrapper import mjbindings
 
-
-class DMSuiteEnv(gym.Env):
-    def __init__(self,
-                 domain_name="cartpole",
-                 task_name="swingup",
-                 visualize_reward=True,
-                 deterministic_reset=False):
-        self.dm_env = suite.load(
-            domain_name=domain_name,
-            task_name=task_name,
-            visualize_reward=visualize_reward)
-        action_spec = self.dm_env.action_spec()
-        self.action_space = gym.spaces.Box(
-            low=action_spec.minimum[0],
-            high=action_spec.maximum[0],
-            shape=action_spec.shape)
-        self.deterministic_reset = deterministic_reset
-        try:
-            ob_spec = self.dm_env.task.observation_spec(self.dm_env.physics)
-            self.observation_space = gym.spaces.Box(
-                low=ob_spec.minimum[0],
-                high=ob_spec.maximum[0],
-                shape=ob_spec.shape)
-        except NotImplementedError:
-            print(
-                "Could not retrieve observation spec, min/max possibly incorrect.",
-                file=sys.stderr)
-            # sample observation and set range to [-10, 10]
-            ob = self.dm_env.task.get_observation(self.dm_env.physics)
-            # ob is an OrderedDict, iterate over all entries to determine overall flattened ob dim
-            ob_dimension = 0
-            for entry in ob.values():
-                ob_dimension += len(entry.flatten())
-            self.observation_space = gym.spaces.Box(
-                low=-10, high=10, shape=(ob_dimension, ))
-        self.reward_range = (0, 1)
-        print('Initialized %s: %s.' % (domain_name, task_name))
-        print('\tobservation space: %s (min: %.2f, max: %.2f)' %
-              (str(self.observation_space.shape),
-               self.observation_space.low[0], self.observation_space.high[0]))
-        print('\taction space: %s (min: %.2f, max: %.2f)' %
-              (str(self.action_space.shape), self.action_space.low[0],
-               self.action_space.high[0]))
-
-    def _step(self, action):
-        # noinspection PyBroadException
-        try:
-            step = self.dm_env.step(action)
-            last_step = step.last()
-            reward = step.reward
-            if reward is None:
-                reward = 0
-
-            physics = self.dm_env.physics
-
-            # stop episode when falling
-            _STAND_HEIGHT = 1.4
-            # last_step = physics.head_height() < _STAND_HEIGHT/4.
-
-            # compute custom reward for standing task
-            # TODO remove
-            # from dm_control.utils import rewards
-            # physics = self.dm_env.physics
-            # _STAND_HEIGHT = 1.4
-            # standing = rewards.tolerance(physics.head_height(),
-            #                              bounds=(_STAND_HEIGHT, float('inf')),
-            #                              margin=_STAND_HEIGHT)
-            # upright = rewards.tolerance(physics.torso_upright(),
-            #                             bounds=(0.9, float('inf')), sigmoid='linear',
-            #                             margin=1.9, value_at_margin=0)
-            # stand_reward = standing * upright
-            # small_control = rewards.tolerance(physics.control(), margin=1,
-            #                                   value_at_margin=0,
-            #                                   sigmoid='quadratic').mean()
-            # small_control = (4 + small_control) / 5
-            # reward = small_control * stand_reward
-        except:
-            # could only be dm_control.rl.control.PhysicsError?
-            # reset environment for bad controls
-            print(traceback.format_exc(), file=sys.stderr)
-            self.dm_env.reset()
-            last_step = True
-            reward = 0
-
-        ob = self.observe()
-        return ob, reward, last_step, {}
-
-    def _reset(self):
-        self.dm_env.reset()
-
-        if self.deterministic_reset:
-            hinge = mjbindings.enums.mjtJoint.mjJNT_HINGE
-            slide = mjbindings.enums.mjtJoint.mjJNT_SLIDE
-            ball = mjbindings.enums.mjtJoint.mjJNT_BALL
-            free = mjbindings.enums.mjtJoint.mjJNT_FREE
-
-            physics = self.dm_env.physics
-
-            for joint_id in range(physics.model.njnt):
-                joint_name = physics.model.id2name(joint_id, 'joint')
-                joint_type = physics.model.jnt_type[joint_id]
-                is_limited = physics.model.jnt_limited[joint_id]
-                range_min, range_max = physics.model.jnt_range[joint_id]
-
-                if is_limited:
-                    if joint_type == hinge or joint_type == slide:
-                        self.dm_env.physics.named.data.qpos[
-                            joint_name] = np.mean([
-                                range_min, range_max
-                            ])  # random.uniform(range_min, range_max)
-
-                    elif joint_type == ball:
-                        self.dm_env.physics.named.data.qpos[
-                            joint_name] = np.mean([
-                                range_min, range_max
-                            ])  # random_limited_quaternion(random, range_max)
-
-                else:
-                    if joint_type == hinge:
-                        self.dm_env.physics.named.data.qpos[joint_name] = 0.  # random.uniform(-np.pi, np.pi)
-
-                    elif joint_type == ball:
-                        quat = np.zeros(4)  # random.randn(4)
-                        # quat /= np.linalg.norm(quat)
-                        self.dm_env.physics.named.data.qpos[joint_name] = quat
-
-                    elif joint_type == free:
-                        quat = np.zeros(4)  # random.rand(4)
-                        # quat /= np.linalg.norm(quat)
-                        self.dm_env.physics.named.data.qpos[joint_name][3:] = quat
-            self.dm_env.physics.after_reset()
-
-        return self.observe()
-
-    def _seed(self, seed=None):
-        self.dm_env.random = np.random.RandomState(seed)
-        return [seed]
-
-    def observe(self):
-        src_ob = self.dm_env.task.get_observation(self.dm_env.physics)
-        ob = np.hstack(entry.flatten() for entry in src_ob.values())
-        return ob
-
-
-def train(num_timesteps, num_cpu, method, domain, task, noise_type, layer_norm, folder, load_policy,
-          video_width, video_height, plot_rewards, render_camera, deterministic_reset, **kwargs):
-
+def train(env_fn, environment, num_timesteps, num_cpu, method, noise_type, layer_norm, folder, load_policy,
+          video_width, video_height, plot_rewards, **kwargs):
     if sys.platform == 'darwin':
         num_cpu //= 2
     config = tf.ConfigProto(
@@ -184,7 +35,7 @@ def train(num_timesteps, num_cpu, method, domain, task, noise_type, layer_norm, 
     worker_seed = 1234 + 10000 * MPI.COMM_WORLD.Get_rank()
     set_global_seeds(worker_seed)
 
-    env = DMSuiteEnv(domain, task, deterministic_reset=deterministic_reset)
+    env = env_fn()
     env.seed(worker_seed)
 
     rank = MPI.COMM_WORLD.Get_rank()
@@ -224,8 +75,7 @@ def train(num_timesteps, num_cpu, method, domain, task, noise_type, layer_norm, 
             for i in range(1000):
                 ac, vpred = locals['pi'].act(False, ob)
                 ob, rew, new, _ = env.step(ac)
-                img = env.env.dm_env.physics.render(
-                    video_width, video_height, camera_id=render_camera)
+                img = env.env.render(mode='rgb_array')
                 if plot_rewards:
                     rewards.append(rew)
                     for j, r in enumerate(rewards):
@@ -239,14 +89,14 @@ def train(num_timesteps, num_cpu, method, domain, task, noise_type, layer_norm, 
                     break
 
             imageio.mimsave(
-                os.path.join(folder, "videos", "%s_%s_%s_iteration_%i.mp4" %
-                             (domain, task, method, locals['iters_so_far'])),
+                os.path.join(folder, "videos", "%s_%s_iteration_%i.mp4" %
+                             (environment, method, locals['iters_so_far'])),
                 images,
                 fps=60)
             env.reset()
             U.save_state(
-                os.path.join(folder, "checkpoints", "%s_%s_%i" %
-                             (domain, task, locals['iters_so_far'])))
+                os.path.join(folder, "checkpoints", "%s_%i" %
+                             (environment, locals['iters_so_far'])))
 
     if method == "ppo":
         pposgd_simple.learn(
@@ -333,7 +183,7 @@ def main(**kwargs):
     rank = MPI.COMM_WORLD.Get_rank()
     if rank == 0:
         timestamp = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
-        folder_name = "{timestamp}-{kwargs[domain]}-{kwargs[task]}-{kwargs[method]}".format(
+        folder_name = "{timestamp}-{kwargs[environment]}-{kwargs[method]}".format(
             timestamp=timestamp, kwargs=kwargs)
         folder_name = os.path.abspath(os.path.join('logs', folder_name))
         pathlib.Path(folder_name, "videos").mkdir(parents=True, exist_ok=True)
@@ -372,12 +222,32 @@ def main(**kwargs):
         logger.configure(format_strs=[])
         folder_name = None
 
+    def env_fn():
+        ids = kwargs['environment'].split('-')
+        framework = ids[0].lower()
+        env_id = '-'.join(ids[1:])
+        if framework == 'dm':
+            from gail.envs.deepmind import DMSuiteEnv
+            return DMSuiteEnv(env_id,
+                              deterministic_reset=kwargs['deterministic_reset'],
+                              render_camera=kwargs['render_camera'],
+                              render_width=kwargs['video_width'],
+                              render_height=kwargs['video_height'])
+        elif framework == 'gym':
+            return gym.make(env_id)
+        elif framework == 'rllab':
+            from gail.envs.rllab import RllabEnv
+            return RllabEnv(env_id)
+
+        raise LookupError("Could not find environment \"%s\"." % env_id)
+
     folder_name = MPI.COMM_WORLD.bcast(folder_name, root=0)
-    train(folder=folder_name, **kwargs)
+    train(env_fn=env_fn, folder=folder_name, **kwargs)
 
 
 if __name__ == '__main__':
     import argparse
+
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--num-timesteps', type=int, default=int(10e6))
@@ -389,10 +259,10 @@ if __name__ == '__main__':
         type=str,
         default='ppo')
     parser.add_argument(
-        '--domain',
-        help='domain to use for the RL environment from DM Control Suite',
+        '--environment',
+        help='environment ID prefixed by framework, e.g. dm-cartpole-swingup, gym-CartPole-v0, rllab-cartpole',
         type=str,
-        default='humanoid')
+        default='rllab-humanoid')
     parser.add_argument(
         '--task',
         help='task to use for the RL environment from DM Control Suite',
