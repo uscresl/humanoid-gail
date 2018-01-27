@@ -84,20 +84,14 @@ def train(env_fn, environment, num_timesteps, num_cpu, method, noise_type, layer
                 if new:
                     break
 
-            draw_dark = np.mean(images[0][-lower_part, :]) > 127
             color = np.array([255, 163, 0])
-            for img in images:
-                for j, r in enumerate(rewards):
+            for i, img in enumerate(images):
+                for j, r in enumerate(rewards[:i]):
                     rew_x = int(j / 1000. * video_width)
                     rew_y = int(r / max_reward * lower_part)
-                    if draw_dark:
-                        img[-lower_part, :10] = 0
-                        img[-lower_part, -10:] = 0
-                        img[-rew_y - 1:, rew_x] = 0
-                    else:
-                        img[-lower_part, :10] = color
-                        img[-lower_part, -10:] = color
-                        img[-rew_y - 1:, rew_x] = color
+                    img[-lower_part, :10] = color
+                    img[-lower_part, -10:] = color
+                    img[-rew_y - 1:, rew_x] = color
             imageio.mimsave(
                 os.path.join(folder, "videos", "%s_%s_iteration_%i.mp4" %
                              (environment, method, locals['iters_so_far'])),
@@ -273,11 +267,6 @@ if __name__ == '__main__':
         help='environment ID prefixed by framework, e.g. dm-cartpole-swingup, gym-CartPole-v0, rllab-cartpole',
         type=str,
         default='rllab-humanoid')
-    parser.add_argument(
-        '--task',
-        help='task to use for the RL environment from DM Control Suite',
-        type=str,
-        default='stand')
 
     # DDPG settings
     boolean_flag(parser, 'normalize-returns', default=False)
