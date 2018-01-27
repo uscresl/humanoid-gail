@@ -71,6 +71,7 @@ def train(env_fn, environment, num_timesteps, num_cpu, method, noise_type, layer
             ob = env.reset()
             images = []
             rewards = []
+            max_reward = 1.  # if any reward > 1, we have to rescale
             lower_part = video_height // 4
             for i in range(1000):
                 ac, vpred = locals['pi'].act(False, ob)
@@ -78,16 +79,25 @@ def train(env_fn, environment, num_timesteps, num_cpu, method, noise_type, layer
                 img = env.env.render(mode='rgb_array')
                 if plot_rewards:
                     rewards.append(rew)
-                    for j, r in enumerate(rewards):
-                        img[-lower_part, :10] = 255
-                        img[-lower_part, -10:] = 255
-                        rew_x = int(j / 1000. * video_width)
-                        rew_y = int(r * lower_part)
-                        img[-rew_y - 1:, rew_x] = 255
+                    max_reward = max(rew, max_reward)
                 images.append(img)
                 if new:
                     break
 
+            draw_dark = np.mean(images[0][-lower_part, :]) > 127
+            color = np.array([255, 163, 0])
+            for img in images:
+                for j, r in enumerate(rewards):
+                    rew_x = int(j / 1000. * video_width)
+                    rew_y = int(r / max_reward * lower_part)
+                    if draw_dark:
+                        img[-lower_part, :10] = 0
+                        img[-lower_part, -10:] = 0
+                        img[-rew_y - 1:, rew_x] = 0
+                    else:
+                        img[-lower_part, :10] = color
+                        img[-lower_part, -10:] = color
+                        img[-rew_y - 1:, rew_x] = color
             imageio.mimsave(
                 os.path.join(folder, "videos", "%s_%s_iteration_%i.mp4" %
                              (environment, method, locals['iters_so_far'])),
