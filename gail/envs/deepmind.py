@@ -1,3 +1,5 @@
+from collections import namedtuple
+
 import gym, sys, traceback
 import numpy as np
 from dm_control import suite
@@ -56,6 +58,9 @@ class DMSuiteEnv(gym.Env):
         self.render_camera = render_camera
         self.render_width = render_width
         self.render_height = render_height
+
+        env_spec = namedtuple('env_spec', ['id', 'timestep_limit'])
+        self._spec = env_spec(id=id, timestep_limit=1000)
 
     def _step(self, action):
         # noinspection PyBroadException
@@ -152,15 +157,15 @@ class DMSuiteEnv(gym.Env):
         return [seed]
 
     def observe(self):
-        # src_ob = self.dm_env.task.get_observation(self.dm_env.physics)
-        # ob = np.hstack(entry.flatten() for entry in src_ob.values())
-        # todo revert to DeepMind's ob
-        ob = np.concatenate([
-            self.dm_env.physics.data.qpos[:].flat,
-            self.dm_env.physics.data.qvel[:].flat,
-            np.clip(self.dm_env.physics.data.cfrc_ext[:], -1, 1).flat,
-            self.dm_env.physics.center_of_mass_position().flat,
-        ])
+        src_ob = self.dm_env.task.get_observation(self.dm_env.physics)
+        ob = np.hstack(entry.flatten() for entry in src_ob.values())
+        # # todo revert to DeepMind's ob
+        # ob = np.concatenate([
+        #     self.dm_env.physics.data.qpos[:].flat,
+        #     self.dm_env.physics.data.qvel[:].flat,
+        #     np.clip(self.dm_env.physics.data.cfrc_ext[:], -1, 1).flat,
+        #     self.dm_env.physics.center_of_mass_position().flat,
+        # ])
         return ob
 
     def render(self, mode='rgb_array', close=False):

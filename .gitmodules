@@ -1,3 +1,6 @@
 [submodule "gail/rllab"]
 	path = gail/rllab
 	url = https://github.com/rll/rllab.git
+[submodule "gail/baselines"]
+	path = gail/baselines
+	url = https://github.com/openai/baselines.git

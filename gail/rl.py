@@ -7,18 +7,31 @@ import gym, gym.spaces, logging
 
 import tensorflow as tf
 
-from baselines import bench, logger
-from baselines.common.misc_util import (
+from gail.algos.acktr import acktr
+from gail.baselines.baselines import bench, logger
+from gail.baselines.baselines.acktr.policies import GaussianMlpPolicy
+from gail.baselines.baselines.acktr.value_functions import NeuralNetValueFunction
+from gail.baselines.baselines.common.misc_util import (
     set_global_seeds,
     boolean_flag,
 )
-from baselines.ppo1 import pposgd_simple, mlp_policy
-from baselines.trpo_mpi import trpo_mpi
-import baselines.common.tf_util as U
-import baselines.ddpg.training as ddpg_training
-from baselines.ddpg.models import Actor, Critic
-from baselines.ddpg.memory import Memory
-from baselines.ddpg.noise import *
+from gail.baselines.baselines.ppo1 import pposgd_simple, mlp_policy
+from gail.baselines.baselines.trpo_mpi import trpo_mpi
+import gail.baselines.baselines.ddpg.training as ddpg_training
+from gail.baselines.baselines.ddpg.models import Actor, Critic
+from gail.baselines.baselines.ddpg.memory import Memory
+from gail.baselines.baselines.ddpg.noise import *
+
+
+def load_state(fname):
+    saver = tf.train.Saver()
+    saver.restore(tf.get_default_session(), fname)
+
+
+def save_state(fname):
+    os.makedirs(os.path.dirname(fname), exist_ok=True)
+    saver = tf.train.Saver()
+    saver.save(tf.get_default_session(), fname)
 
 
 def train(env_fn, environment, num_timesteps, num_cpu, method, noise_type, layer_norm, folder, load_policy,
@@ -69,11 +82,11 @@ def train(env_fn, environment, num_timesteps, num_cpu, method, noise_type, layer
         if load_policy is not None and locals['iters_so_far'] == 0:
             # noinspection PyBroadException
             try:
-                U.load_state(load_policy)
+                load_state(load_policy)
                 if MPI.COMM_WORLD.Get_rank() == 0:
                     logger.info("Loaded policy network weights from %s." % load_policy)
                     # save TensorFlow summary (contains at least the graph definition)
-                    _ = tf.summary.FileWriter(folder, U.get_session().graph)
+                    _ = tf.summary.FileWriter(folder, tf.get_default_graph())
             except:
                 logger.error("Failed to load policy network weights from %s." % load_policy)
         if MPI.COMM_WORLD.Get_rank() == 0 and locals['iters_so_far'] % 50 == 0:
@@ -85,7 +98,10 @@ def train(env_fn, environment, num_timesteps, num_cpu, method, noise_type, layer
             max_reward = 1.  # if any reward > 1, we have to rescale
             lower_part = video_height // 4
             for i in range(1000):
-                ac, vpred = locals['pi'].act(False, ob)
+                if isinstance(locals['pi'], GaussianMlpPolicy):
+                    ac, _, _ = locals['pi'].act(np.concatenate((ob, ob)))
+                else:
+                    ac, _ = locals['pi'].act(False, ob)
                 ob, rew, new, _ = env.step(ac)
                 img = env.env.render(mode='rgb_array')
                 if plot_rewards:
@@ -109,8 +125,8 @@ def train(env_fn, environment, num_timesteps, num_cpu, method, noise_type, layer
                 images,
                 fps=60)
             env.reset()
-            U.save_state(
-                os.path.join(folder, "checkpoints", "%s_%i" %
+
+            save_state(os.path.join(folder, "checkpoints", "%s_%i" %
                              (environment, locals['iters_so_far'])))
 
     if method == "ppo":
@@ -142,6 +158,25 @@ def train(env_fn, environment, num_timesteps, num_cpu, method, noise_type, layer
             vf_iters=5,
             vf_stepsize=1e-3,
             callback=callback)
+    elif method == "acktr":
+        with tf.Session(config=tf.ConfigProto()):
+            ob_dim = env.observation_space.shape[0]
+            ac_dim = env.action_space.shape[0]
+            with tf.variable_scope("vf"):
+                vf = NeuralNetValueFunction(ob_dim, ac_dim)
+            with tf.variable_scope("pi"):
+                policy = GaussianMlpPolicy(ob_dim, ac_dim)
+            acktr.learn(
+                env,
+                pi=policy,
+                vf=vf,
+                gamma=0.99,
+                lam=0.97,
+                timesteps_per_batch=1024,
+                desired_kl=0.01,  # 0.002
+                num_timesteps=num_timesteps,
+                animate=False,
+                callback=callback)
     elif method == "ddpg":
         # Parse noise_type
         action_noise = None
@@ -200,7 +235,7 @@ def main(**kwargs):
         timestamp = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
         folder_name = "{timestamp}-{kwargs[environment]}-{kwargs[method]}".format(
             timestamp=timestamp, kwargs=kwargs)
-        folder_name = os.path.abspath(os.path.join('logs', folder_name))
+        folder_name = os.path.abspath(os.path.join(kwargs['logdir'], folder_name))
         pathlib.Path(folder_name, "videos").mkdir(parents=True, exist_ok=True)
         pathlib.Path(folder_name, "checkpoints").mkdir(
             parents=True, exist_ok=True)
@@ -270,15 +305,21 @@ if __name__ == '__main__':
         '--num-cpu', help='number of cpu to used', type=int, default=4)
     parser.add_argument(
         '--method',
-        help='reinforcement learning algorithm to use (ppo/trpo/ddpg)',
+        help='reinforcement learning algorithm to use (ppo/trpo/ddpg/acktr)',
         type=str,
-        default='trpo')
+        default='acktr')
     parser.add_argument(
         '--environment',
         help='environment ID prefixed by framework, e.g. dm-cartpole-swingup, gym-CartPole-v0, rllab-cartpole',
         type=str,
         default='dm-humanoid-run')
-        # default='rllab-humanoid')
+    # default='rllab-humanoid')
+
+    parser.add_argument(
+        '--logdir',
+        help='folder where the logs will be stored',
+        type=str,
+        default='logs')
 
     # DDPG settings
     boolean_flag(parser, 'normalize-returns', default=False)
