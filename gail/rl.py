@@ -3,7 +3,7 @@
 import imageio, os, sys, datetime, pathlib, json
 from mpi4py import MPI
 import os.path as osp
-import gym, logging
+import gym, gym.spaces, logging
 
 import tensorflow as tf
 
@@ -43,6 +43,15 @@ def train(env_fn, environment, num_timesteps, num_cpu, method, noise_type, layer
                                                      logger.get_dir()))
 
     def policy_fn(name, ob_space, ac_space):  # pylint: disable=W0613
+        # failed attempt to transfer policy from rllab to DeepMind Control Suite
+        # from gail.transfer_pi import TransferMlpPolicy
+        # return TransferMlpPolicy(
+        #     name=name,
+        #     ob_space=ob_space,
+        #     ac_space=ac_space,
+        #     src_ob_space=gym.spaces.Box(-5, 5, shape=(142,)),  # rllab humanoid ob_space
+        #     hid_size=150,
+        #     num_hid_layers=3)
         return mlp_policy.MlpPolicy(
             name=name,
             ob_space=ob_space,
@@ -63,6 +72,8 @@ def train(env_fn, environment, num_timesteps, num_cpu, method, noise_type, layer
                 U.load_state(load_policy)
                 if MPI.COMM_WORLD.Get_rank() == 0:
                     logger.info("Loaded policy network weights from %s." % load_policy)
+                    # save TensorFlow summary (contains at least the graph definition)
+                    _ = tf.summary.FileWriter(folder, U.get_session().graph)
             except:
                 logger.error("Failed to load policy network weights from %s." % load_policy)
         if MPI.COMM_WORLD.Get_rank() == 0 and locals['iters_so_far'] % 50 == 0:
@@ -261,12 +272,13 @@ if __name__ == '__main__':
         '--method',
         help='reinforcement learning algorithm to use (ppo/trpo/ddpg)',
         type=str,
-        default='ppo')
+        default='trpo')
     parser.add_argument(
         '--environment',
         help='environment ID prefixed by framework, e.g. dm-cartpole-swingup, gym-CartPole-v0, rllab-cartpole',
         type=str,
-        default='rllab-humanoid')
+        default='dm-humanoid-run')
+        # default='rllab-humanoid')
 
     # DDPG settings
     boolean_flag(parser, 'normalize-returns', default=False)

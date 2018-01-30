@@ -35,11 +35,13 @@ class DMSuiteEnv(gym.Env):
                 "Could not retrieve observation spec, min/max possibly incorrect.",
                 file=sys.stderr)
             # sample observation and set range to [-10, 10]
-            ob = self.dm_env.task.get_observation(self.dm_env.physics)
-            # ob is an OrderedDict, iterate over all entries to determine overall flattened ob dim
-            ob_dimension = 0
-            for entry in ob.values():
-                ob_dimension += len(entry.flatten())
+            # ob = self.dm_env.task.get_observation(self.dm_env.physics)
+            # # ob is an OrderedDict, iterate over all entries to determine overall flattened ob dim
+            # ob_dimension = 0
+            # for entry in ob.values():
+            #     ob_dimension += len(entry.flatten())
+            ob = self.observe()
+            ob_dimension = len(ob)
             self.observation_space = gym.spaces.Box(
                 low=-10, high=10, shape=(ob_dimension, ))
         self.reward_range = (0, 1)
@@ -150,8 +152,15 @@ class DMSuiteEnv(gym.Env):
         return [seed]
 
     def observe(self):
-        src_ob = self.dm_env.task.get_observation(self.dm_env.physics)
-        ob = np.hstack(entry.flatten() for entry in src_ob.values())
+        # src_ob = self.dm_env.task.get_observation(self.dm_env.physics)
+        # ob = np.hstack(entry.flatten() for entry in src_ob.values())
+        # todo revert to DeepMind's ob
+        ob = np.concatenate([
+            self.dm_env.physics.data.qpos[:].flat,
+            self.dm_env.physics.data.qvel[:].flat,
+            np.clip(self.dm_env.physics.data.cfrc_ext[:], -1, 1).flat,
+            self.dm_env.physics.center_of_mass_position().flat,
+        ])
         return ob
 
     def render(self, mode='rgb_array', close=False):
