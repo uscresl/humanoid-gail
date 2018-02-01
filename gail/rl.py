@@ -86,9 +86,10 @@ def train(env_fn, environment, num_timesteps, num_cpu, method, noise_type, layer
                 if MPI.COMM_WORLD.Get_rank() == 0:
                     logger.info("Loaded policy network weights from %s." % load_policy)
                     # save TensorFlow summary (contains at least the graph definition)
-                    _ = tf.summary.FileWriter(folder, tf.get_default_graph())
             except:
                 logger.error("Failed to load policy network weights from %s." % load_policy)
+        if MPI.COMM_WORLD.Get_rank() == 0 and locals['iters_so_far'] == 0:
+            _ = tf.summary.FileWriter(folder, tf.get_default_graph())
         if MPI.COMM_WORLD.Get_rank() == 0 and locals['iters_so_far'] % 50 == 0:
             print('Saving video and checkpoint for policy at iteration %i...' %
                   locals['iters_so_far'])
