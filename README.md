@@ -1,5 +1,22 @@
 # humanoid-gail
-Humanoid behavior imitation using Generative Adversarial Imitation Learning (GAIL)
+Humanoid behavior imitation using Generative Adversarial Imitation Learning (GAIL).
+
+An accompanying research blog post with details and references: https://uscresl.github.io/humanoid-gail/
+
+![Architecture overview](docs/architecture.svg)
+
+If you find this code/work useful, consider citing the following:
+```
+@misc{DDHJK2017,
+  author = {Debnath, Shoubhik and Devos, Arnout and Heiden, Eric and Julian, Ryan and Khatana, Fiona},
+  title = {Humanoid Imitation Learning from Diverse Sources},
+  year = {2017},
+  publisher = {GitHub},
+  journal = {GitHub repository},
+  howpublished = {\url{https://github.com/uscresl/humanoid-gail}},
+  commit = {d27232df8e3fd94948e5f70360c43e098265ac62}
+}
+```
 
 # Installation
 1. Install Docker (We recommend the free CE edition): for [Ubuntu](https://docs.docker.com/engine/installation/linux/docker-ce/ubuntu/), for [Mac](https://docs.docker.com/docker-for-mac/install/), for [Windows](https://docs.docker.com/docker-for-windows/install/)
